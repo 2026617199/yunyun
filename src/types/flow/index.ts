@@ -1,0 +1,127 @@
+import type { Edge, Node, ReactFlowJsonObject } from "@xyflow/react";
+import type { ChatMessage } from "../ai";
+
+// ==================== 核心数据模型 ====================
+
+/**
+ * 文本生成节点数据结构
+ * 用于 LLM 对话生成任务
+ */
+export interface TextGenerationNode {
+  model: string; // 使用的模型，如 gpt-4, gpt-3.5-turbo
+  messages: ChatMessage[]; // 对话历史
+  temperature?: number; // 温度参数，控制随机性 (0-2)
+  max_tokens?: number; // 最大生成 token 数
+  top_p?: number; // 核采样参数
+  stream?: boolean; // 是否启用流式输出
+  stop?: string | string[]; // 停止词
+  frequency_penalty?: number; // 频率惩罚
+  presence_penalty?: number; // 存在惩罚
+  [key: string]: any; // React Flow 约束兼容
+}
+
+/**
+ * 图片生成节点数据结构
+ * 用于 AI 图片生成任务
+ */
+export interface ImageGenerationNode {
+  model: string; // 使用的模型，如 dall-e-3, gemini-3-pro-image-preview
+  prompt: string; // 生成提示词
+  n?: number; // 生成图片数量 (1-4)
+  size?: string; // 图片尺寸比例，如 "16:9", "1024x1024"
+  quality?: string; // 图片质量，如 "standard", "hd"
+  style?: string; // 图片风格
+  image_urls?: string[]; // 参考图片 URL 列表
+  [key: string]: any; // React Flow 约束兼容
+}
+
+/**
+ * 视频生成节点数据结构
+ * 用于 AI 视频生成任务
+ */
+export interface VideoGenerationNode {
+  model: string; // 使用的模型
+  prompt: string; // 生成提示词
+  duration?: number; // 视频时长（秒）
+  aspect_ratio: string; // 宽高比，如 "16:9"
+  image_urls?: string[]; // 参考图像 URL 列表
+  style?: string; // 视频风格
+  [key: string]: any; // React Flow 约束兼容
+}
+
+// ==================== 辅助类型 ====================
+
+/**
+ * 构建状态类型
+ */
+export type BuildStatus = "idle" | "pending" | "success" | "failed";
+
+/**
+ * API 类型定义（通用节点类型）
+ * 用于表示任意 API 调用节点
+ */
+export type APIClassType = Record<string, any>;
+
+/**
+ * 边的数据结构
+ */
+export interface EdgeDataType {
+  label?: string; // 边的标签
+  animated?: boolean; // 是否动画
+  style?: Record<string, any>; // 边的样式
+  [key: string]: any; // React Flow 约束兼容
+}
+
+/**
+ * 节点操作数据结构
+ * 用于在画布上表示和操作节点的元数据
+ */
+export interface NodeDataType {
+  showNode?: boolean; // 是否显示节点
+  type: string; // 节点类型标识
+  node: APIClassType; // 节点的 API 配置
+  id: string; // 节点唯一标识符
+  output_types?: string[]; // 输出类型列表
+  selected_output_type?: string; // 当前选择的输出类型
+  buildStatus?: BuildStatus; // 构建状态
+  selected_output?: string; // 选择的输出
+}
+
+// ==================== 流和节点类型 ====================
+
+/**
+ * 流样式配置
+ */
+export interface FlowStyleType {
+  emoji: string; // 流的表情图标
+  color: string; // 流的颜色
+  flow_id: string; // 关联的流 ID
+}
+
+
+
+export type TextNodeType = Node<TextGenerationNode, "textNode">;
+export type ImageNodeType = Node<ImageGenerationNode, "imageNode">;
+export type VideoNodeType = Node<VideoGenerationNode, "videoNode">;
+// React Flow 默认的节点类型
+export type DefaultNodeType = Node<any, "default">;
+
+export type AllNodeType = TextNodeType | ImageNodeType | VideoNodeType | DefaultNodeType;
+export type EdgeType = Edge<EdgeDataType, "default">;
+
+// ==================== 流类型 ====================
+
+/**
+ * 流配置类型
+ * 表示一个完整的工作流或数据处理管道
+ */
+export type FlowType = {
+  id: string; // 流的唯一标识符
+  name: string; // 流的名称
+  description: string; // 流的描述
+//   data: any; // 流的图数据 (ReactFlowJsonObject<AllNodeType, EdgeType>)
+  data: ReactFlowJsonObject<AllNodeType, EdgeType> | null;
+  style?: FlowStyleType; // 流的样式配置
+  updated_at?: string; // 最后更新时间
+  date_created?: string; // 创建时间
+}
