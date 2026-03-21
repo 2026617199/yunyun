@@ -1,5 +1,6 @@
 import type { Edge, Node, ReactFlowJsonObject } from "@xyflow/react";
 import type { ChatMessage } from "../ai";
+import { GenerationStatus } from "@/components/constants/enum";
 
 // ==================== 核心数据模型 ====================
 
@@ -24,7 +25,9 @@ export interface TextGenerationNode {
  * 图片生成节点数据结构
  * 用于 AI 图片生成任务
  */
+
 export interface ImageGenerationNode {
+  // ---- 核心输入参数 ----
   model: string; // 使用的模型，如 dall-e-3, gemini-3-pro-image-preview
   prompt: string; // 生成提示词
   n?: number; // 生成图片数量 (1-4)
@@ -32,6 +35,21 @@ export interface ImageGenerationNode {
   quality?: string; // 图片质量，如 "standard", "hd"
   style?: string; // 图片风格
   image_urls?: string[]; // 参考图片 URL 列表
+  // ---- 输出结果 ----
+  task_id?: string; // 任务 ID（用于轮询）
+  result?: {
+    type: string; // 结果类型
+    data?: {
+      url?: string; // 图片 URL
+    }[]; // 图片数据列表
+  }; // 生成结果
+  // ---- 状态管理 ----
+  status?: GenerationStatus; // 当前生成状态
+  progress?: number; // 进度百分比（0-100）
+  error?: {
+    code?: string; // 错误代码
+    message?: string; // 错误信息
+  }; // 错误对象
   [key: string]: any; // React Flow 约束兼容
 }
 
@@ -40,12 +58,34 @@ export interface ImageGenerationNode {
  * 用于 AI 视频生成任务
  */
 export interface VideoGenerationNode {
+
   model: string; // 使用的模型
   prompt: string; // 生成提示词
   duration?: number; // 视频时长（秒）
   aspect_ratio: string; // 宽高比，如 "16:9"
   image_urls?: string[]; // 参考图像 URL 列表
   style?: string; // 视频风格
+  status?: GenerationStatus; // 当前生成状态
+  progress?: number; // 进度百分比（0-100）
+  metadata: {
+    size?: string; // 视频尺寸，例如 "1920x1080", "720x720"
+  };
+
+  // ---- 输出结果 ----
+  task_id?: string; // 任务 ID（用于轮询）对应响应结果里面的id字段
+  error?: {
+    code?: string; // 错误代码
+    message?: string; // 错误信息
+  }; // 错误对象
+    result?: {
+    // 任务结果（仅成功时返回）
+    type: string; // 结果类型，固定为 video
+    data: {
+      // 视频数据数组
+      url: string; // 生成的视频 URL
+      format: string; // 视频格式（如 mp4）
+    }[];
+  };
   [key: string]: any; // React Flow 约束兼容
 }
 
@@ -139,7 +179,7 @@ export type FlowType = {
   id: string; // 流的唯一标识符
   name: string; // 流的名称
   description: string; // 流的描述
-//   data: any; // 流的图数据 (ReactFlowJsonObject<AllNodeType, EdgeType>)
+  //   data: any; // 流的图数据 (ReactFlowJsonObject<AllNodeType, EdgeType>)
   data: ReactFlowJsonObject<AllNodeType, EdgeType> | null;
   style?: FlowStyleType; // 流的样式配置
   updated_at?: string; // 最后更新时间
