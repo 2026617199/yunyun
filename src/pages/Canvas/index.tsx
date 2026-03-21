@@ -15,6 +15,7 @@ import type {
     AllNodeType,
     EdgeType
 } from "@/types/flow";
+import DevTools from './DevTools'
 
 // 自定义节点映射：以模块级常量定义，避免高频渲染时重复创建对象。
 const nodeTypes = {
@@ -46,6 +47,7 @@ const CanvasFlow = () => {
             <Background />
             <Controls />
             <MiniMap />
+            <DevTools />
         </ReactFlow>
     )
 }

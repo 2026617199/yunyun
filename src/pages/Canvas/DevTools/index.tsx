@@ -3,12 +3,14 @@ import { Panel, PanelPosition } from '@xyflow/react';
 
 import NodeInspector from './NodeInspector';
 import ChangeLogger from './ChangeLogger';
+import MessageDemo from './MessageDemo';
 
 import './style.css';
 
 export default function ReactFlowDevTools({ position = 'top-left' }: { position?: PanelPosition }) {
   const [nodeInspectorActive, setNodeInspectorActive] = useState(false);
   const [changeLoggerActive, setChangeLoggerActive] = useState(false);
+  const [messageDemoActive, setMessageDemoActive] = useState(false);
 
   return (
     <div className="react-flow__devtools">
@@ -19,9 +21,13 @@ export default function ReactFlowDevTools({ position = 'top-left' }: { position?
         <DevToolButton setActive={setChangeLoggerActive} active={changeLoggerActive} title="Toggle Change Logger">
           Change Logger
         </DevToolButton>
+        <DevToolButton setActive={setMessageDemoActive} active={messageDemoActive} title="Toggle Message Demo">
+          Message Demo
+        </DevToolButton>
       </Panel>
       {changeLoggerActive && <ChangeLogger />}
       {nodeInspectorActive && <NodeInspector />}
+      {messageDemoActive && <MessageDemo />}
     </div>
   );
 }
