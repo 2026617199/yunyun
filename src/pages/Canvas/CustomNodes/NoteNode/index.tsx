@@ -9,7 +9,8 @@ import { NoteToolbar } from './NoteToolbar'
 
 // NoteNode：最小可用文本节点实现，保留编辑、预览、缩放与工具栏动作。
 export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNodeType>) => {
-    const updateNode = useCanvasFlowStore((state) => state.updateNode)
+    const setNoteNodeEditing = useCanvasFlowStore((state) => state.setNoteNodeEditing)
+    const updateNoteNodeContent = useCanvasFlowStore((state) => state.updateNoteNodeContent)
     const resizeNode = useCanvasFlowStore((state) => state.resizeNode)
     const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
     const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
@@ -73,15 +74,13 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
                         content={data.content}
                         isEditing={Boolean(data.isEditing)}
                         onStartEdit={() => {
-                            updateNode(id, { isEditing: true })
+                            setNoteNodeEditing(id, true)
                         }}
                         onStopEdit={() => {
-                            updateNode(id, { isEditing: false })
+                            setNoteNodeEditing(id, false)
                         }}
                         onContentChange={(value) => {
-                            updateNode(id, {
-                                content: value,
-                            })
+                            updateNoteNodeContent(id, value)
                         }}
                     />
                 </div>

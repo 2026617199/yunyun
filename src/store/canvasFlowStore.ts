@@ -8,7 +8,7 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 
-import type { AllNodeType, EdgeType, NoteNodeData, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
+import type { AllNodeType, EdgeType } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
 
 /**
@@ -17,11 +17,19 @@ import { GenerationStatus } from '@/constants/enum'
 type NodeType = 'note' | 'image' | 'video'
 
 /**
- * 通用节点数据补丁类型
- * 支持 NoteNodeData、ImageGenerationNode、VideoGenerationNode 的部分更新
+ * 基于最后一个节点计算新节点位置
  */
-// 把节点里面的属性都变成可选属性
-type NodeDataPatch = Partial<NoteNodeData> | Partial<ImageGenerationNode> | Partial<VideoGenerationNode>
+const getNextNodePosition = (nodes: AllNodeType[]) => {
+  const lastNode = nodes[nodes.length - 1]
+  const fallbackPosition = { x: 220, y: 180 }
+
+  return lastNode
+    ? {
+        x: lastNode.position.x + 40,
+        y: lastNode.position.y + 40,
+      }
+    : fallbackPosition
+}
 
 type CanvasFlowState = {
   nodes: AllNodeType[]
@@ -37,10 +45,12 @@ type CanvasFlowState = {
   // === 通用节点操作 ===
   /** 获取下一个指定类型的节点 ID（自增） */
   getNextNodeId: (nodeType: NodeType) => string
-  /** 创建新节点 */
-  addNode: (nodeType: NodeType, customData?: NodeDataPatch) => void
-  /** 更新节点数据（支持所有节点类型） */
-  updateNode: (nodeId: string, patch: NodeDataPatch, nodeType?: NodeType) => void
+  /** 创建节点 */
+  addNode: (nodeType: NodeType) => void
+  /** 更新便签编辑态 */
+  setNoteNodeEditing: (nodeId: string, isEditing: boolean) => void
+  /** 更新便签内容 */
+  updateNoteNodeContent: (nodeId: string, content: string) => void
   /** 调整节点尺寸 */
   resizeNode: (nodeId: string, width: number, height: number) => void
   /** 复制节点 */
@@ -380,22 +390,12 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   },
 
   /**
-   * 创建新节点（通用方法）
-   * @param nodeType 节点类型
-   * @param customData 自定义数据（可选，用于覆盖默认值）
+   * 创建新节点（统一入口）
    */
-  addNode: (nodeType: NodeType, customData?: NodeDataPatch) => {
+  addNode: (nodeType: NodeType) => {
     const nextId = get().getNextNodeId(nodeType)
     const currentNodes = get().nodes
-    const lastNode = currentNodes[currentNodes.length - 1]
-    const fallbackPosition = { x: 220, y: 180 }
-    const nextPosition = lastNode
-      ? {
-          x: lastNode.position.x + 40,
-          y: lastNode.position.y + 40,
-        }
-      : fallbackPosition
-
+    const nextPosition = getNextNodePosition(currentNodes)
     let newNode: AllNodeType
 
     if (nodeType === 'note') {
@@ -411,8 +411,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
           outputHandleId: 'output',
           isEditing: true,
           createdAt: Date.now(),
-          ...customData,
-        } as NoteNodeData,
+        },
       }
     } else if (nodeType === 'image') {
       newNode = {
@@ -431,10 +430,9 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
             data: [],
           },
           createdAt: Date.now(),
-          ...customData,
-        } as ImageGenerationNode,
+        },
       }
-    } else if (nodeType === 'video') {
+    } else {
       newNode = {
         id: nextId,
         type: 'videoNode',
@@ -453,11 +451,8 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
             data: [],
           },
           createdAt: Date.now(),
-          ...customData,
-        } as VideoGenerationNode,
+        },
       }
-    } else {
-      throw new Error(`Unknown node type: ${nodeType}`)
     }
 
     set((state) => ({
@@ -466,31 +461,43 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   },
 
   /**
-   * 更新节点数据（通用方法，支持所有节点类型）
-   * @param nodeId 节点 ID
-   * @param patch 要更新的数据片段
-   * @param nodeType 节点类型（可选，用于性能优化）
+   * 更新便签节点编辑态
    */
-  updateNode: (nodeId: string, patch: NodeDataPatch, nodeType?: NodeType) => {
+  setNoteNodeEditing: (nodeId: string, isEditing: boolean) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
-        // 类型检查：如果指定了 nodeType，则只更新该类型的节点
-        if (nodeType && node.type.replace('Node', '') !== nodeType) {
+        if (node.id !== nodeId || node.type !== 'noteNode') {
           return node
         }
 
-        if (node.id !== nodeId) {
-          return node
-        }
-
-        // 泛型类型断言：由于补丁类型为联合体，需要 as 断言
         return {
           ...node,
           data: {
             ...node.data,
-            ...patch,
+            isEditing,
           },
-        } as AllNodeType
+        }
+      }),
+    }))
+  },
+
+  /**
+   * 更新便签节点内容
+   */
+  updateNoteNodeContent: (nodeId: string, content: string) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id !== nodeId || node.type !== 'noteNode') {
+          return node
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            content,
+          },
+        }
       }),
     }))
   },
@@ -507,7 +514,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
         if (node.id !== nodeId) {
           return node
         }
-        return { ...node, width, height } as AllNodeType
+        return { ...node, width, height }
       }),
     }))
   },
@@ -532,19 +539,36 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     }
 
     const newId = get().getNextNodeId(nodeType)
-    const duplicatedNode: AllNodeType = {
-      ...currentNode,
-      id: newId,
-      position: {
-        x: currentNode.position.x + 40,
-        y: currentNode.position.y + 40,
-      },
-      data: {
-        ...currentNode.data,
-        isEditing: false, // NoteNode 特定属性，其他节点无此字段但不影响
-        createdAt: Date.now(),
-      },
-    } as AllNodeType
+    let duplicatedNode: AllNodeType
+
+    if (currentNode.type === 'noteNode') {
+      duplicatedNode = {
+        ...currentNode,
+        id: newId,
+        position: {
+          x: currentNode.position.x + 40,
+          y: currentNode.position.y + 40,
+        },
+        data: {
+          ...currentNode.data,
+          isEditing: false,
+          createdAt: Date.now(),
+        },
+      }
+    } else {
+      duplicatedNode = {
+        ...currentNode,
+        id: newId,
+        position: {
+          x: currentNode.position.x + 40,
+          y: currentNode.position.y + 40,
+        },
+        data: {
+          ...currentNode.data,
+          createdAt: Date.now(),
+        },
+      }
+    }
 
     set((state) => ({
       nodes: [...state.nodes, duplicatedNode],
@@ -571,7 +595,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    */
   onNodesChange: (changes) => {
     set((state) => ({
-      nodes: applyNodeChanges(changes, state.nodes) as AllNodeType[],
+      nodes: applyNodeChanges(changes, state.nodes),
     }))
   },
 
@@ -580,7 +604,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    */
   onEdgesChange: (changes) => {
     set((state) => ({
-      edges: applyEdgeChanges(changes, state.edges) as EdgeType[],
+      edges: applyEdgeChanges(changes, state.edges),
     }))
   },
 
