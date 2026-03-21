@@ -9,11 +9,10 @@ import { NoteToolbar } from './NoteToolbar'
 
 // NoteNode：最小可用文本节点实现，保留编辑、预览、缩放与工具栏动作。
 export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNodeType>) => {
-    const updateNoteNode = useCanvasFlowStore((state) => state.updateNoteNode)
-    const resizeNoteNode = useCanvasFlowStore((state) => state.resizeNoteNode)
-    const duplicateNoteNode = useCanvasFlowStore((state) => state.duplicateNoteNode)
+    const updateNode = useCanvasFlowStore((state) => state.updateNode)
+    const resizeNode = useCanvasFlowStore((state) => state.resizeNode)
+    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
     const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
-    const setNodeEditing = useCanvasFlowStore((state) => state.setNodeEditing)
 
     const inputHandleId = data.inputHandleId ?? 'input'
     const outputHandleId = data.outputHandleId ?? 'output'
@@ -30,7 +29,7 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
                 }}
                 onResizeEnd={(_, { width, height }) => {
                     const nextSize = latestSizeRef.current ?? { width, height }
-                    resizeNoteNode(id, nextSize.width, nextSize.height)
+                    resizeNode(id, nextSize.width, nextSize.height)
                     latestSizeRef.current = null
                 }}
             />
@@ -61,7 +60,7 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
                 {selected ? (
                     <NoteToolbar
                         onDuplicate={() => {
-                            duplicateNoteNode(id)
+                            duplicateNode(id)
                         }}
                         onDelete={() => {
                             deleteNode(id)
@@ -74,13 +73,13 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
                         content={data.content}
                         isEditing={Boolean(data.isEditing)}
                         onStartEdit={() => {
-                            setNodeEditing(id, true)
+                            updateNode(id, { isEditing: true })
                         }}
                         onStopEdit={() => {
-                            setNodeEditing(id, false)
+                            updateNode(id, { isEditing: false })
                         }}
                         onContentChange={(value) => {
-                            updateNoteNode(id, {
+                            updateNode(id, {
                                 content: value,
                             })
                         }}

@@ -1,0 +1,88 @@
+import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react'
+import { useRef } from 'react'
+
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
+import type { ImageNodeType } from '@/types/flow'
+
+import { ImageContent } from './ImageContent'
+import { ImageToolbar } from './ImageToolbar'
+
+/**
+ * 图片节点组件
+ * 职责：
+ * - 集成 NodeResizer 支持动态调整尺寸
+ * - 提供左右 Handle 用于流程连接
+ * - 展示图片内容、生成状态与进度
+ * - 提供工具栏操作（复制、删除、重新生成）
+ */
+export const ImageNode = ({
+    id,
+    data,
+    selected,
+    width,
+    height
+}: NodeProps<ImageNodeType>) => {
+    // 从 store 中获取操作方法
+    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
+    const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
+    const resizeNode = useCanvasFlowStore((state) => state.resizeNode)
+
+    const latestSizeRef = useRef<{ width: number; height: number } | null>(null)
+
+    console.log('图片节点重新渲染', id)
+
+    return (
+        <>
+            {/* 节点大小调整器 */}
+            <NodeResizer
+                isVisible={selected}
+                lineClassName="!border !border-muted-foreground"
+                onResize={(_, { width, height }) => {
+                    latestSizeRef.current = { width, height }
+                }}
+                onResizeEnd={(_, { width, height }) => {
+                    const nextSize = latestSizeRef.current ?? { width, height }
+                    resizeNode(id, nextSize.width, nextSize.height)
+                    latestSizeRef.current = null
+                }}
+            />
+
+            {/* 左侧输入 Handle */}
+            <Handle
+                type="target"
+                position={Position.Left}
+                id="input"
+                className="h-3! w-3! border-2! border-background! bg-primary!"
+            />
+
+            {/* 右侧输出 Handle */}
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="output"
+                className="h-3! w-3! border-2! border-background! bg-primary!"
+            />
+
+            <div
+                style={{
+                    width,
+                    height,
+                }}
+                className="relative flex h-full w-full flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm transition-transform duration-200 ease-in-out"
+            >
+                {/* 选中时显示工具栏 */}
+                {selected ? (
+                    <ImageToolbar
+                        onDuplicate={() => duplicateNode(id)}
+                        onDelete={() => deleteNode(id)}
+                    />
+                ) : null}
+
+                {/* 图片内容区 */}
+                <div className="flex h-full w-full overflow-hidden rounded-md bg-muted/10">
+                    <ImageContent data={data} />
+                </div>
+            </div>
+        </>
+    )
+}

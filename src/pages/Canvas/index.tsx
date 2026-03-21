@@ -8,6 +8,8 @@ import {
 } from '@xyflow/react'
 
 import { NoteNode } from './CustomNodes/NoteNode'
+import { ImageNode } from './CustomNodes/ImageNode'
+import { VideoNode } from './CustomNodes/VideoNode'
 import { FloatingSidebar } from './components/FloatingSidebar'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 
@@ -17,9 +19,15 @@ import type {
 } from "@/types/flow";
 import DevTools from './DevTools'
 
-// 自定义节点映射：以模块级常量定义，避免高频渲染时重复创建对象。
+/**
+ * 自定义节点类型映射
+ * 以模块级常量定义，避免高频渲染时重复创建对象
+ * 支持三种节点类型：noteNode、imageNode、videoNode
+ */
 const nodeTypes = {
     noteNode: NoteNode,
+    imageNode: ImageNode,
+    videoNode: VideoNode,
 }
 
 // 画布流组件：仅负责 ReactFlow 相关状态与渲染。
@@ -54,15 +62,24 @@ const CanvasFlow = () => {
 
 // 外部组件 - 提供 ReactFlowProvider
 const CanvasPage = () => {
-    const addNoteNode = useCanvasFlowStore((state) => state.addNoteNode)
+    const addNode = useCanvasFlowStore((state) => state.addNode)
 
     // 侧边栏动作处理：保留页面层调度，避免与高频画布渲染耦合。
     const handleSidebarAction = useCallback((actionId: string) => {
-        if (actionId === 'create') {
-            addNoteNode()
-            return
+        switch (actionId) {
+            case 'create-note':
+                addNode('note')
+                break
+            case 'create-image':
+                addNode('image')
+                break
+            case 'create-video':
+                addNode('video')
+                break
+            default:
+                break
         }
-    }, [addNoteNode])
+    }, [addNode])
 
     return (
         <ReactFlowProvider>

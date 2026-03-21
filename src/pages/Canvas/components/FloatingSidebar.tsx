@@ -7,12 +7,13 @@ import {
     IconSparkles,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 
 import { cn } from '@/utils/utils'
 
 import './floatingSidebar.css'
 
-// 侧边栏动作项类型：用于约束占位动作的数据结构，方便后续接入真实交互逻辑。
+// 侧边栏动作项类型
 export type FloatingSidebarItem = {
     id: string
     label: string
@@ -21,6 +22,7 @@ export type FloatingSidebarItem = {
     disabled?: boolean
     active?: boolean
     role?: 'primary' | 'default' | 'bottom'
+    children?: { id: string; label: string }[]
 }
 
 // 组件 Props：支持外部注入动作项与统一动作回调，当前以占位逻辑为主。
@@ -37,6 +39,11 @@ const defaultItems: FloatingSidebarItem[] = [
         label: '新增节点',
         icon: <IconPlus stroke={2.5} size={22} />,
         role: 'primary',
+        children: [
+            { id: 'create-note', label: '便签' },
+            { id: 'create-image', label: '图片' },
+            { id: 'create-video', label: '视频' },
+        ],
     },
     {
         id: 'assistant',
@@ -77,6 +84,8 @@ const getItemsByRole = (items: FloatingSidebarItem[], role: FloatingSidebarItem[
 
 // 悬浮侧边栏组件：只负责视觉与占位回调，不耦合业务状态。
 export const FloatingSidebar = ({ items = defaultItems, onAction, className }: FloatingSidebarProps) => {
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
+
     // 顶部主操作。
     const primaryItems = getItemsByRole(items, 'primary')
     // 中部常规操作。
@@ -90,70 +99,72 @@ export const FloatingSidebar = ({ items = defaultItems, onAction, className }: F
             return
         }
 
-        item.onClick?.()
-        onAction?.(item.id)
+        if (item.children) {
+            // 如果有子菜单，切换展开状态
+            setExpandedItemId(expandedItemId === item.id ? null : item.id)
+        } else {
+            item.onClick?.()
+            onAction?.(item.id)
+        }
+    }
+
+    // 处理子菜单项点击
+    const handleSubItemClick = (subId: string) => {
+        onAction?.(subId)
+        setExpandedItemId(null)
+    }
+
+    // 渲染菜单项
+    const renderMenuItems = (itemsList: FloatingSidebarItem[]) => {
+        return itemsList.map((item) => (
+            <div key={item.id} className="relative">
+                <button
+                    type="button"
+                    title={item.label}
+                    aria-label={item.label}
+                    className={cn(
+                        'noflow nopan nodelete nodrag canvas-floating-sidebar__button',
+                        item.id === 'create' && 'canvas-floating-sidebar__button--primary',
+                        item.active && 'canvas-floating-sidebar__button--active',
+                        item.disabled && 'canvas-floating-sidebar__button--disabled',
+                    )}
+                    disabled={item.disabled}
+                    onClick={() => handleClick(item)}
+                >
+                    {item.icon}
+                </button>
+
+                {/* 子菜单 */}
+                {item.children && expandedItemId === item.id && (
+                    <div className="absolute left-full top-0 ml-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-max">
+                        {item.children.map((subItem) => (
+                            <button
+                                key={subItem.id}
+                                type="button"
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors noflow nopan nodelete nodrag"
+                                onClick={() => handleSubItemClick(subItem.id)}
+                            >
+                                {subItem.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        ))
     }
 
     return (
         <aside className={cn('canvas-floating-sidebar', className)} aria-label="画布悬浮侧边栏">
             <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--primary">
-                {primaryItems.map((item) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        title={item.label}
-                        aria-label={item.label}
-                        className={cn(
-                            'noflow nopan nodelete nodrag canvas-floating-sidebar__button canvas-floating-sidebar__button--primary',
-                            item.active && 'canvas-floating-sidebar__button--active',
-                            item.disabled && 'canvas-floating-sidebar__button--disabled',
-                        )}
-                        disabled={item.disabled}
-                        onClick={() => handleClick(item)}
-                    >
-                        {item.icon}
-                    </button>
-                ))}
+                {renderMenuItems(primaryItems)}
             </div>
 
             <div className="canvas-floating-sidebar__group">
-                {defaultRoleItems.map((item) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        title={item.label}
-                        aria-label={item.label}
-                        className={cn(
-                            'noflow nopan nodelete nodrag canvas-floating-sidebar__button',
-                            item.active && 'canvas-floating-sidebar__button--active',
-                            item.disabled && 'canvas-floating-sidebar__button--disabled',
-                        )}
-                        disabled={item.disabled}
-                        onClick={() => handleClick(item)}
-                    >
-                        {item.icon}
-                    </button>
-                ))}
+                {renderMenuItems(defaultRoleItems)}
             </div>
 
             <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--bottom">
-                {bottomItems.map((item) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        title={item.label}
-                        aria-label={item.label}
-                        className={cn(
-                            'noflow nopan nodelete nodrag canvas-floating-sidebar__button',
-                            item.active && 'canvas-floating-sidebar__button--active',
-                            item.disabled && 'canvas-floating-sidebar__button--disabled',
-                        )}
-                        disabled={item.disabled}
-                        onClick={() => handleClick(item)}
-                    >
-                        {item.icon}
-                    </button>
-                ))}
+                {renderMenuItems(bottomItems)}
             </div>
         </aside>
     )
