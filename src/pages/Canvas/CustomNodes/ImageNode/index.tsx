@@ -1,4 +1,4 @@
-import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react'
+import { Handle, NodeResizer, NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
 import { useRef } from 'react'
 
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
@@ -23,9 +23,8 @@ export const ImageNode = ({
     height
 }: NodeProps<ImageNodeType>) => {
     // 从 store 中获取操作方法
-    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
-    const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
     const resizeNode = useCanvasFlowStore((state) => state.resizeNode)
+    const { zoom } = useViewport()
 
     const latestSizeRef = useRef<{ width: number; height: number } | null>(null)
 
@@ -33,6 +32,8 @@ export const ImageNode = ({
 
     return (
         <>
+
+
             {/* 节点大小调整器 */}
             <NodeResizer
                 isVisible={selected}
@@ -63,6 +64,11 @@ export const ImageNode = ({
                 className="h-3! w-3! border-2! border-background! bg-primary!"
             />
 
+            {/* 顶部工具栏：随节点与画布缩放联动 */}
+            <NodeToolbar isVisible position={Position.Top} offset={10 * zoom}>
+                <ImageToolbar data={data} selected={selected} zoom={zoom} />
+            </NodeToolbar>
+
             <div
                 style={{
                     width,
@@ -70,14 +76,6 @@ export const ImageNode = ({
                 }}
                 className="relative flex h-full w-full flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm transition-transform duration-200 ease-in-out"
             >
-                {/* 选中时显示工具栏 */}
-                {selected ? (
-                    <ImageToolbar
-                        onDuplicate={() => duplicateNode(id)}
-                        onDelete={() => deleteNode(id)}
-                    />
-                ) : null}
-
                 {/* 图片内容区 */}
                 <div className="flex h-full w-full overflow-hidden rounded-md bg-muted/10">
                     <ImageContent data={data} />

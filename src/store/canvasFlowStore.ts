@@ -154,8 +154,14 @@ const initialNodes: AllNodeType[] = [
         type: 'image',
         data: [
           {
-            url: MOCK_IMAGE_URL,
+            url: 'https://fastly.picsum.photos/id/471/300/250.jpg?hmac=eriVhCVbqPNZqhEpkxM1MgsUxHC6fqeOoxSVEkLage4',
           },
+          {
+            url: 'https://www.wanmoshi.com/oss/jian/2026-03-18/9aa96e4b752279f6.jpg',
+          },
+          {
+            url: 'https://img2.baidu.com/it/u=606415654,4045189200&fm=253&app=138&f=JPEG?w=500&h=500',
+          }
         ],
       },
       createdAt: Date.now(),
