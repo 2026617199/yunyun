@@ -11,6 +11,22 @@ export const IMAGE_REFERENCE_MOCK = [
     { id: 'ref-3', title: '电影构图', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=240&h=240&fit=crop' },
     { id: 'ref-4', title: '玻璃建筑', url: 'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=240&h=240&fit=crop' },
     { id: 'ref-5', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-6', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-7', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-8', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-9', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-10', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-11', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-12', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-13', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-14', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-15', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-16', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-17', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-18', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-19', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+    { id: 'ref-20', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
+
 ] as const
 
 export const MENTION_MOCK = [
