@@ -1,6 +1,7 @@
-import { Handle, NodeResizer, NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
+import { NodeResizer, NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
 import { useRef } from 'react'
 
+import { ButtonHandle } from '@/components/button-handle'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageNodeType } from '@/types/flow'
 
@@ -50,7 +51,7 @@ export const ImageNode = ({
             />
 
             {/* 左侧输入 Handle */}
-            <Handle
+            <ButtonHandle
                 type="target"
                 position={Position.Left}
                 id="input"
@@ -58,7 +59,7 @@ export const ImageNode = ({
             />
 
             {/* 右侧输出 Handle */}
-            <Handle
+            <ButtonHandle
                 type="source"
                 position={Position.Right}
                 id="output"

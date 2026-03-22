@@ -1,6 +1,7 @@
-import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react'
+import { NodeResizer, Position, type NodeProps } from '@xyflow/react'
 import { useRef } from 'react'
 
+import { ButtonHandle } from '@/components/button-handle'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { NoteNodeType } from '@/types/flow'
 
@@ -36,7 +37,7 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
             />
 
             {/* 左侧输入 Handle：用于接收其他节点连接。 */}
-            <Handle
+            <ButtonHandle
                 type="target"
                 position={Position.Left}
                 id={inputHandleId}
@@ -44,7 +45,7 @@ export const NoteNode = ({ id, data, selected, width, height }: NodeProps<NoteNo
             />
 
             {/* 右侧输出 Handle：用于连接到其他节点。 */}
-            <Handle
+            <ButtonHandle
                 type="source"
                 position={Position.Right}
                 id={outputHandleId}
