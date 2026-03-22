@@ -4,5 +4,49 @@
 @import "@xyflow/react/dist/style.css";
 @import "yet-another-react-lightbox/styles.css";
 
+.image-node-mention-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, #4f46e5 22%, #c7d2fe 78%);
+	background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+	color: #3730a3;
+	font-weight: 600;
+	font-size: 12px;
+	line-height: 1;
+	padding: 4px 9px;
+	margin: 0 1px;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.image-node-slash-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, #0f766e 22%, #99f6e4 78%);
+	background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%);
+	color: #115e59;
+	font-weight: 600;
+	font-size: 12px;
+	line-height: 1;
+	padding: 4px 9px;
+	margin: 0 1px;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.ProseMirror .image-node-mention-pill.ProseMirror-selectednode {
+	outline: 2px solid #6366f1;
+	outline-offset: 1px;
+}
+
+.ProseMirror .image-node-slash-pill.ProseMirror-selectednode {
+	outline: 2px solid #14b8a6;
+	outline-offset: 1px;
+}
+
 
 

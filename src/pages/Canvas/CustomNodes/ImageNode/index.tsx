@@ -5,6 +5,7 @@ import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageNodeType } from '@/types/flow'
 
 import { ImageContent } from './ImageContent'
+import { ImagePromptPanel } from './ImagePromptPanel'
 import { ImageToolbar } from './ImageToolbar'
 
 /**
@@ -67,6 +68,23 @@ export const ImageNode = ({
             {/* 顶部工具栏：随节点与画布缩放联动 */}
             <NodeToolbar isVisible position={Position.Top} offset={10 * zoom}>
                 <ImageToolbar data={data} selected={selected} zoom={zoom} />
+            </NodeToolbar>
+
+            {/* 底部增强输入区：固定在节点下方 */}
+            <NodeToolbar
+                isVisible={selected}
+                position={Position.Bottom}
+                offset={18 * zoom}
+            >
+                <div
+                    className="nodrag nopan nowheel"
+                    style={{
+                        transform: `scale(${zoom})`,
+                        transformOrigin: 'top center',
+                    }}
+                >
+                    <ImagePromptPanel nodeId={id} />
+                </div>
             </NodeToolbar>
 
             <div
