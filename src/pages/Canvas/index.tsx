@@ -1,16 +1,20 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
     ReactFlowProvider,
     ReactFlow,
     Background,
     Controls,
     MiniMap,
+    type FinalConnectionState,
+    type InternalNode,
+    useReactFlow,
 } from '@xyflow/react'
 
 import { NoteNode } from './CustomNodes/NoteNode'
 import { ImageNode } from './CustomNodes/ImageNode'
 import { VideoNode } from './CustomNodes/VideoNode'
 import { FloatingSidebar } from './components/FloatingSidebar'
+import { CanvasContextMenu, type CanvasNodeType } from './components/CanvasContextMenu'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 
 import type {
@@ -38,25 +42,129 @@ const CanvasFlow = () => {
     const onNodesChange = useCanvasFlowStore((state) => state.onNodesChange)
     const onEdgesChange = useCanvasFlowStore((state) => state.onEdgesChange)
     const onConnect = useCanvasFlowStore((state) => state.onConnect)
+    const addNode = useCanvasFlowStore((state) => state.addNode)
+    const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
+
+    const contextMenuTriggerRef = useRef<HTMLDivElement | null>(null)
+    const [menuScreenPosition, setMenuScreenPosition] = useState({ x: 0, y: 0 })
+    const pendingConnectRef = useRef<{
+        nodeId: string
+        handleId: string | null
+        handleType: 'source' | 'target'
+    } | null>(null)
+
+    const openContextMenuAt = useCallback((x: number, y: number) => {
+        setMenuScreenPosition({ x, y })
+        const contextMenuEvent = new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: x,
+            clientY: y,
+        })
+        contextMenuTriggerRef.current?.dispatchEvent(contextMenuEvent)
+    }, [])
+
+    const handlePaneContextMenu = useCallback((event) => {
+        pendingConnectRef.current = null
+        setMenuScreenPosition({ x: event.clientX, y: event.clientY })
+    }, [])
+
+    const handleConnectStart = useCallback((_, params) => {
+        if (!params?.nodeId || !params?.handleType) {
+            pendingConnectRef.current = null
+            return
+        }
+
+        pendingConnectRef.current = {
+            nodeId: params.nodeId,
+            handleId: params.handleId ?? null,
+            handleType: params.handleType,
+        }
+    }, [])
+
+    const handleConnectEnd = useCallback(
+        (
+            event: MouseEvent | TouchEvent,
+            connectionState: FinalConnectionState<InternalNode>
+        ) => {
+            if (connectionState.isValid) {
+                pendingConnectRef.current = null
+                return
+            }
+
+            if (event.target instanceof Element && !event.target.closest('.react-flow__pane')) {
+                pendingConnectRef.current = null
+                return
+            }
+
+            const pointer = 'changedTouches' in event ? event.changedTouches[0] : event
+            if (!pointer) {
+                pendingConnectRef.current = null
+                return
+            }
+
+            openContextMenuAt(pointer.clientX, pointer.clientY)
+        },
+        [openContextMenuAt]
+    )
+
+    const handleCreateNodeFromMenu = useCallback(
+        (nodeType: CanvasNodeType) => {
+            const flowPosition = screenToFlowPosition(menuScreenPosition)
+            const newNodeId = addNode(nodeType, flowPosition)
+
+            const pendingConnect = pendingConnectRef.current
+            if (!pendingConnect) {
+                return
+            }
+
+            if (pendingConnect.handleType === 'source') {
+                onConnect({
+                    source: pendingConnect.nodeId,
+                    sourceHandle: pendingConnect.handleId ?? 'output',
+                    target: newNodeId,
+                    targetHandle: 'input',
+                })
+            } else {
+                onConnect({
+                    source: newNodeId,
+                    sourceHandle: 'output',
+                    target: pendingConnect.nodeId,
+                    targetHandle: pendingConnect.handleId ?? 'input',
+                })
+            }
+
+            pendingConnectRef.current = null
+        },
+        [addNode, menuScreenPosition, onConnect, screenToFlowPosition]
+    )
 
     console.log("CanvasFlow 重新渲染")
     // 说明：连接事件由 store action 处理，这里不再创建局部回调。
     return (
-        <ReactFlow<AllNodeType, EdgeType>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            nodesDraggable
-            fitView
-        >
-            <Background />
-            <Controls />
-            <MiniMap />
-            <DevTools />
-        </ReactFlow>
+        <CanvasContextMenu onCreateNode={handleCreateNodeFromMenu}>
+            <div ref={contextMenuTriggerRef} className="h-full w-full">
+                <ReactFlow<AllNodeType, EdgeType>
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onConnectStart={handleConnectStart}
+                    onPaneContextMenu={handlePaneContextMenu}
+                    onConnectEnd={handleConnectEnd}
+                    nodeTypes={nodeTypes}
+                    nodesDraggable
+                    fitView
+                >
+                    <Background />
+                    <Controls />
+                    <MiniMap />
+                    <DevTools />
+                </ReactFlow>
+            </div>
+        </CanvasContextMenu>
     )
 }
 

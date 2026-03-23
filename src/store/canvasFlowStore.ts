@@ -16,6 +16,7 @@ import { GenerationStatus } from '@/constants/enum'
  * 节点类型标识符
  */
 type NodeType = 'note' | 'image' | 'video'
+type NodePosition = { x: number; y: number }
 
 /**
  * 基于最后一个节点计算新节点位置
@@ -47,7 +48,7 @@ type CanvasFlowState = {
   /** 获取下一个指定类型的节点 ID（自增） */
   getNextNodeId: (nodeType: NodeType) => string
   /** 创建节点 */
-  addNode: (nodeType: NodeType) => void
+  addNode: (nodeType: NodeType, position?: NodePosition) => string
   /** 更新便签编辑态 */
   setNoteNodeEditing: (nodeId: string, isEditing: boolean) => void
   /** 更新便签内容 */
@@ -524,10 +525,10 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   /**
    * 创建新节点（统一入口）
    */
-  addNode: (nodeType: NodeType) => {
+  addNode: (nodeType: NodeType, position?: NodePosition) => {
     const nextId = get().getNextNodeId(nodeType)
     const currentNodes = get().nodes
-    const nextPosition = getNextNodePosition(currentNodes)
+    const nextPosition = position ?? getNextNodePosition(currentNodes)
     let newNode: AllNodeType
 
     if (nodeType === 'note') {
@@ -586,6 +587,8 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     set((state) => ({
       nodes: [...state.nodes, newNode],
     }))
+
+    return nextId
   },
 
   /**
