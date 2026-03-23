@@ -1,8 +1,9 @@
-import { IconAt, IconCommand, IconPhoto, IconSparkles, IconWand } from '@tabler/icons-react'
+import { IconAt, IconCommand, IconPhoto, IconSparkles, IconUpload, IconWand } from '@tabler/icons-react'
 import Mention from '@tiptap/extension-mention'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useMemo, useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
 
 import {
     IMAGE_MODELS,
@@ -16,14 +17,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { uploadImage } from '@/api/ai'
+import { GenerationStatus } from '@/constants/enum'
+import useMessage from '@/hooks/useMessage'
 import { cn } from '@/lib/utils'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
+import type { ImageGenerationNode } from '@/types/flow'
 
-import {
-    COMMAND_MOCK,
-    IMAGE_REFERENCE_MOCK,
-    MENTION_MOCK,
-    STYLE_TEMPLATE_MOCK,
-} from './mock'
+import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from './mock'
 
 /**
  * 图片节点底部增强输入区
@@ -42,11 +43,28 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const [resolution, setResolution] = useState('2K')
     const [model, setModel] = useState('gemini-3-pro-image-preview')
     const [templateId, setTemplateId] = useState<string>(STYLE_TEMPLATE_MOCK[0].id)
+    // 上传成功后的参考图 URL（本地态即可，后续可迁移到 store）
+    const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
+    // 上传中态，避免重复上传触发
+    const [isUploading, setIsUploading] = useState(false)
 
     const [mentionQuery, setMentionQuery] = useState('')
     const [commandQuery, setCommandQuery] = useState('')
     const [activeMode, setActiveMode] = useState<'mention' | 'command' | null>(null)
     const [activeIndex, setActiveIndex] = useState(0)
+
+    // 消息提示（成功/失败/警告）
+    const { success, error, warning } = useMessage()
+
+    // 画布数据：用于沿边查找父节点
+    const nodes = useCanvasFlowStore((state) => state.nodes)
+    const edges = useCanvasFlowStore((state) => state.edges)
+    const startImageGeneration = useCanvasFlowStore((state) => state.startImageGeneration)
+
+    // 当前节点状态（用于禁用生成按钮）
+    const currentNode = useMemo(() => {
+        return nodes.find((node) => node.id === nodeId)
+    }, [nodes, nodeId])
 
     const resetSuggestionState = () => {
         setActiveMode(null)
@@ -137,6 +155,8 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     // 用于粗粒度识别当前触发词位置，便于替换 @xxx 或 /xxx
     const triggerRangeRef = useRef<{ from: number; to: number } | null>(null)
+    // 上传按钮对应的隐藏 input
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
 
     const insertSuggestionNode = (
         mode: 'mention' | 'command',
@@ -224,6 +244,91 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const currentTemplate = useMemo(() => {
         return STYLE_TEMPLATE_MOCK.find((item) => item.id === templateId) ?? STYLE_TEMPLATE_MOCK[0]
     }, [templateId])
+
+    // 沿着边找所有父节点，并合并其图片结果作为参考图来源
+    const parentImageUrls = useMemo(() => {
+        const parentIds = edges
+            .filter((edge) => edge.target === nodeId)
+            .map((edge) => edge.source)
+
+        if (parentIds.length === 0) {
+            return [] as string[]
+        }
+
+        const urls: string[] = []
+
+        parentIds.forEach((parentId) => {
+            const parentNode = nodes.find((node) => node.id === parentId)
+            if (!parentNode || parentNode.type !== 'imageNode') {
+                return
+            }
+
+            const parentData = parentNode.data as ImageGenerationNode
+            parentData.result?.data?.forEach((item) => {
+                if (item?.url) {
+                    urls.push(item.url)
+                }
+            })
+        })
+
+        return urls
+    }, [edges, nodes, nodeId])
+
+    // 参考图列表：上传图片 + 父节点结果（不去重，默认顺序）
+    const referenceImageUrls = useMemo(() => {
+        return [...uploadedUrls, ...parentImageUrls]
+    }, [uploadedUrls, parentImageUrls])
+
+    // 是否正在生成（用于按钮禁用态）
+    const isGenerating = useMemo(() => {
+        if (!currentNode || currentNode.type !== 'imageNode') {
+            return false
+        }
+
+        const status = currentNode.data.status
+        return status === GenerationStatus.IN_PROGRESS || status === GenerationStatus.QUEUED
+    }, [currentNode])
+
+    // 触发上传选择
+    const handleUploadClick = () => {
+        if (isUploading) {
+            return
+        }
+        fileInputRef.current?.click()
+    }
+
+    // 上传图片并回填到参考图列表
+    const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) {
+            return
+        }
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('purpose', 'generation')
+
+        setIsUploading(true)
+
+        try {
+            const response = await uploadImage(formData)
+            const nextUrl = response?.data?.url
+
+            if (!nextUrl) {
+                warning('上传成功但未返回图片地址')
+                return
+            }
+
+            setUploadedUrls((prev) => [...prev, nextUrl])
+            success('上传成功')
+        } catch (uploadError) {
+            console.error('上传图片失败:', uploadError)
+            error('上传失败，请重试')
+        } finally {
+            setIsUploading(false)
+            event.target.value = ''
+        }
+    }
 
     const editor = useEditor({
         extensions: [StarterKit, mentionExtension, slashCommandExtension],
@@ -327,6 +432,36 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     const suggestionItems = activeMode === 'mention' ? filteredMentionItems : filteredCommandItems
 
+    // 点击生成：创建任务并启动轮询
+    const handleGenerate = async () => {
+        const promptText = editor?.getText().trim() ?? ''
+
+        if (!promptText) {
+            warning('请输入提示词')
+            return
+        }
+
+        const payload: any = {
+            model,
+            prompt: promptText,
+            size: ratio,
+            resolution,
+            n: 1,
+            image_urls: referenceImageUrls,
+            metadata: {
+                resolution,
+            },
+        }
+
+        try {
+            await startImageGeneration(nodeId, payload)
+            success('已开始生成图片')
+        } catch (generationError) {
+            console.error('创建图片生成任务失败:', generationError)
+            error('创建任务失败，请稍后再试')
+        }
+    }
+
     return (
         <div className="nodrag nopan nowheel w-170 rounded-3xl border border-slate-200/80 bg-[linear-gradient(160deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.97)_58%,rgba(241,245,249,0.96)_100%)] p-3 shadow-[0_22px_70px_rgba(15,23,42,0.14)] backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between px-1">
@@ -344,17 +479,42 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                     参考图列表
                 </div>
                 <div className="nodrag nopan nowheel flex gap-2 overflow-x-auto pb-1">
-                    {IMAGE_REFERENCE_MOCK.map((item) => (
+                    {/* 上传按钮（固定为第一个） */}
+                    <button
+                        type="button"
+                        className="group nodrag nopan nowheel relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white/90 text-slate-500 transition-colors hover:border-indigo-400 hover:text-indigo-600"
+                        onClick={handleUploadClick}
+                        title={isUploading ? '上传中...' : '上传参考图'}
+                        disabled={isUploading}
+                    >
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[10px]">
+                            <IconUpload size={16} />
+                            {isUploading ? '上传中' : '上传'}
+                        </div>
+                    </button>
+
+                    {/* 隐藏 input，用于触发文件选择 */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+
+                    {/* 参考图（上传 + 父节点结果） */}
+                    {referenceImageUrls.map((url, index) => (
                         <button
-                            key={item.id}
+                            key={`${url}-${index}`}
                             type="button"
                             className="group nodrag nopan nowheel relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-                            title={item.title}
+                            title="参考图"
                         >
                             <img
-                                src={item.url}
-                                alt={item.title}
+                                src={url}
+                                alt="参考图"
                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                loading="lazy"
                             />
                         </button>
                     ))}
@@ -504,6 +664,23 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                     <p className="line-clamp-2 text-[11px] leading-5 text-violet-800/90">
                         {currentTemplate.promptPreview}
                     </p>
+                </div>
+
+                {/* 生成按钮：放在参数控制区底部靠右 */}
+                <div className="mt-3 flex items-center justify-end">
+                    <button
+                        type="button"
+                        className={cn(
+                            'inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                            isGenerating || isUploading
+                                ? 'cursor-not-allowed bg-slate-200 text-slate-500'
+                                : 'bg-indigo-500 text-white hover:bg-indigo-600',
+                        )}
+                        onClick={handleGenerate}
+                        disabled={isGenerating || isUploading}
+                    >
+                        {isGenerating ? '生成中...' : '生成'}
+                    </button>
                 </div>
             </div>
         </div>

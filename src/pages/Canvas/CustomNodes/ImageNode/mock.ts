@@ -1,33 +1,9 @@
 /**
  * 图片节点底部增强输入区 mock 数据
  * 说明：
- * - 本期全部本地 mock，后续可平滑替换为后端接口。
- * - 数量控制在最小可用：@mention 与 /command 均 8-12 条。
+ * - 本期保留 @mention 与 /command 与风格模板 mock。
+ * - 参考图列表改为真实上传/父节点结果驱动，不再使用 mock。
  */
-
-export const IMAGE_REFERENCE_MOCK = [
-    { id: 'ref-1', title: '赛博街景', url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=240&h=240&fit=crop' },
-    { id: 'ref-2', title: '雨夜霓虹', url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=240&h=240&fit=crop' },
-    { id: 'ref-3', title: '电影构图', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=240&h=240&fit=crop' },
-    { id: 'ref-4', title: '玻璃建筑', url: 'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=240&h=240&fit=crop' },
-    { id: 'ref-5', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-6', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-7', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-8', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-9', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-10', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-11', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-12', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-13', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-14', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-15', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-16', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-17', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-18', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-19', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-    { id: 'ref-20', title: '未来肖像', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=240&h=240&fit=crop' },
-
-] as const
 
 export const MENTION_MOCK = [
     { id: 'm-1', label: '产品经理-Luna', value: 'luna', description: '需求方向与用户场景' },

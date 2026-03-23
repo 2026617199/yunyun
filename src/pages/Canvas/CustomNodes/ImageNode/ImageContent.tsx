@@ -14,7 +14,8 @@ type ImageContentProps = {
  * - 处理错误状态展示
  */
 export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
-    const imageUrl = data.result?.data?.[0]?.url
+    // 结果图片列表（支持多张）
+    const images = data.result?.data?.filter((item) => item?.url).map((item) => item.url as string) ?? []
     const status = data.status ?? GenerationStatus.COMPLETED
     const progress = data.progress ?? 0
     const error = data.error
@@ -60,19 +61,25 @@ export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
     }
 
     // 已完成状态
-    if (imageUrl) {
+    if (images.length > 0) {
         return (
-            <div className="noflow nopan nowheel h-full w-full overflow-hidden rounded-md bg-background flex items-center justify-center">
-                <img
-                    src={imageUrl}
-                    alt="生成的图片"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                        // 图片加载失败时显示占位符
-                        const img = e.target as HTMLImageElement
-                        img.style.display = 'none'
-                    }}
-                />
+            <div className="noflow nopan nowheel h-full w-full overflow-hidden rounded-md bg-background p-1">
+                <div className="grid h-full w-full grid-cols-2 gap-1">
+                    {images.map((url, index) => (
+                        <img
+                            key={`${url}-${index}`}
+                            src={url}
+                            alt={`生成图片-${index + 1}`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                                // 图片加载失败时隐藏单张图，避免破坏布局
+                                const img = e.target as HTMLImageElement
+                                img.style.display = 'none'
+                            }}
+                        />
+                    ))}
+                </div>
             </div>
         )
     }

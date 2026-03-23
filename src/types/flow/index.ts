@@ -32,6 +32,7 @@ export interface ImageGenerationNode {
   prompt: string; // 生成提示词
   n?: number; // 生成图片数量 (1-4)
   size?: string; // 图片尺寸比例，如 "16:9", "1024x1024"
+  resolution?: string; // 分辨率，如 "1K", "2K", "4K"
   quality?: string; // 图片质量，如 "standard", "hd"
   style?: string; // 图片风格
   image_urls?: string[]; // 参考图片 URL 列表

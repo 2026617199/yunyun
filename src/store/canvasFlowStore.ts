@@ -8,7 +8,8 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 
-import type { AllNodeType, EdgeType } from '@/types/flow'
+import { createImageGeneration, getImageTaskStatus } from '@/api/ai'
+import type { AllNodeType, EdgeType, ImageGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
 
 /**
@@ -57,6 +58,12 @@ type CanvasFlowState = {
   duplicateNode: (nodeId: string) => void
   /** 删除节点及其关联边 */
   deleteNode: (nodeId: string) => void
+  /** 更新图片节点数据（局部字段 patch） */
+  updateImageNodeData: (nodeId: string, patch: Partial<ImageGenerationNode>) => void
+  /** 创建图片生成任务并启动轮询 */
+  startImageGeneration: (nodeId: string, payload: any) => Promise<void>
+  /** 手动停止图片轮询（防止内存泄露） */
+  stopImagePolling: (nodeId: string) => void
 }
 
 // ==================== 初始图数据 ====================
@@ -72,6 +79,149 @@ const MOCK_IMAGE_URL = 'https://picsum.photos/300/250?random=1'
  * （生产环境应替换为真实生成的 URL）
  */
 const MOCK_VIDEO_URL = 'https://248vz9dlvm.ufs.sh/f/HlpeesVvzNZhbg0rlBhg0QRhzI8K9TPMCB5tkO3JXdn6HxDE'
+
+// ==================== 图片生成轮询支持 ====================
+
+// 轮询频率（2 秒）
+const IMAGE_POLL_INTERVAL = 2000
+// 轮询控制器：用于中止旧轮询
+const imagePollingControllers = new Map<string, AbortController>()
+
+/**
+ * 可中断等待函数
+ */
+const wait = (ms: number, signal?: AbortSignal) => {
+  return new Promise<void>((resolve) => {
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener('abort', handleAbort)
+      resolve()
+    }, ms)
+
+    const handleAbort = () => {
+      window.clearTimeout(timer)
+      resolve()
+    }
+
+    if (signal?.aborted) {
+      handleAbort()
+      return
+    }
+
+    signal?.addEventListener('abort', handleAbort, { once: true })
+  })
+}
+
+/**
+ * 更新图片节点数据的通用辅助函数
+ */
+const updateImageNodeInList = (
+  nodes: AllNodeType[],
+  nodeId: string,
+  updater: (data: ImageGenerationNode) => ImageGenerationNode
+) => {
+  return nodes.map((node) => {
+    if (node.id !== nodeId || node.type !== 'imageNode') {
+      return node
+    }
+
+    return {
+      ...node,
+      data: updater(node.data as ImageGenerationNode),
+    }
+  })
+}
+
+/**
+ * 停止某个节点的图片轮询
+ */
+const stopImagePollingInternal = (nodeId: string) => {
+  const controller = imagePollingControllers.get(nodeId)
+  if (controller) {
+    controller.abort()
+  }
+  imagePollingControllers.delete(nodeId)
+}
+
+/**
+ * 图片生成轮询逻辑
+ */
+const pollImageGeneration = async (
+  taskId: string,
+  nodeId: string,
+  signal: AbortSignal,
+  setState: (updater: (state: CanvasFlowState) => Partial<CanvasFlowState>) => void,
+  getState: () => CanvasFlowState
+) => {
+  try {
+    while (true) {
+      await wait(IMAGE_POLL_INTERVAL, signal)
+      if (signal.aborted) {
+        return
+      }
+
+      const response: any = await getImageTaskStatus(taskId)
+
+      const currentNode = getState().nodes.find((node) => node.id === nodeId)
+      if (!currentNode || currentNode.type !== 'imageNode') {
+        stopImagePollingInternal(nodeId)
+        return
+      }
+
+      setState((state) => ({
+        nodes: updateImageNodeInList(state.nodes, nodeId, (data) => {
+          if (response.status === 'completed') {
+            return {
+              ...data,
+              status: GenerationStatus.COMPLETED,
+              progress: 100,
+              task_id: response.id ?? taskId,
+              result: response.result,
+              error: undefined,
+            }
+          }
+
+          if (response.status === 'failed') {
+            return {
+              ...data,
+              status: GenerationStatus.FAILED,
+              progress: response.progress ?? 0,
+              task_id: response.id ?? taskId,
+              error: response.error ?? {
+                code: 'UNKNOWN_ERROR',
+                message: '生成失败，请稍后再试',
+              },
+            }
+          }
+
+          return {
+            ...data,
+            status: GenerationStatus.IN_PROGRESS,
+            progress: response.progress ?? 0,
+            task_id: response.id ?? taskId,
+          }
+        }),
+      }))
+
+      if (response.status === 'completed' || response.status === 'failed') {
+        stopImagePollingInternal(nodeId)
+        return
+      }
+    }
+  } catch (pollError) {
+    console.error('图片生成轮询失败:', pollError)
+    stopImagePollingInternal(nodeId)
+    setState((state) => ({
+      nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        status: GenerationStatus.FAILED,
+        error: {
+          code: 'POLL_ERROR',
+          message: '轮询失败，请稍后再试',
+        },
+      })),
+    }))
+  }
+}
 
 // 初始图数据：包含默认节点、文本便签、图片节点、视频节点的演示
 // 布局规划：
@@ -586,12 +736,94 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    * @param nodeId 要删除的节点 ID
    */
   deleteNode: (nodeId: string) => {
+    const targetNode = get().nodes.find((node) => node.id === nodeId)
+    if (targetNode?.type === 'imageNode') {
+      stopImagePollingInternal(nodeId)
+    }
     set((state) => ({
       nodes: state.nodes.filter((node) => node.id !== nodeId),
       edges: state.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
     }))
+  },
+
+  /**
+   * 更新图片节点数据（局部 patch）
+   */
+  updateImageNodeData: (nodeId, patch) => {
+    set((state) => ({
+      nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        ...patch,
+      })),
+    }))
+  },
+
+  /**
+   * 创建图片生成任务并启动轮询
+   */
+  startImageGeneration: async (nodeId, payload) => {
+    // 先中止旧轮询，避免并发任务冲突
+    stopImagePollingInternal(nodeId)
+
+    // 更新节点输入参数与状态
+    set((state) => ({
+      nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        ...payload,
+        status: GenerationStatus.QUEUED,
+        progress: 0,
+        error: undefined,
+        result: {
+          type: 'image',
+          data: [],
+        },
+      })),
+    }))
+
+    try {
+      const response: any = await createImageGeneration(payload)
+      const taskId = response?.id
+
+      if (!taskId) {
+        throw new Error('任务 ID 为空')
+      }
+
+      // 标记为生成中并记录任务 ID
+      set((state) => ({
+        nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+          ...data,
+          task_id: taskId,
+          status: GenerationStatus.IN_PROGRESS,
+          progress: response?.progress ?? 0,
+        })),
+      }))
+
+      const controller = new AbortController()
+      imagePollingControllers.set(nodeId, controller)
+      pollImageGeneration(taskId, nodeId, controller.signal, set, get)
+    } catch (startError) {
+      console.error('创建图片生成任务失败:', startError)
+      set((state) => ({
+        nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+          ...data,
+          status: GenerationStatus.FAILED,
+          error: {
+            code: 'CREATE_TASK_FAILED',
+            message: '创建任务失败，请稍后再试',
+          },
+        })),
+      }))
+      throw startError
+    }
+  },
+
+  /**
+   * 手动停止图片轮询
+   */
+  stopImagePolling: (nodeId) => {
+    stopImagePollingInternal(nodeId)
   },
 
   // ==================== 流程事件处理 ====================
