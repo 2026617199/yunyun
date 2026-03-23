@@ -1,5 +1,6 @@
 import { GenerationStatus } from '@/constants/enum'
 import type { ImageGenerationNode } from '@/types/flow'
+import { CollapsibleImageGallery } from './CollapsibleImageGallery'
 
 type ImageContentProps = {
     data: ImageGenerationNode
@@ -62,26 +63,7 @@ export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
 
     // 已完成状态
     if (images.length > 0) {
-        return (
-            <div className="noflow nopan nowheel h-full w-full overflow-hidden rounded-md bg-background p-1">
-                <div className="grid h-full w-full grid-cols-2 gap-1">
-                    {images.map((url, index) => (
-                        <img
-                            key={`${url}-${index}`}
-                            src={url}
-                            alt={`生成图片-${index + 1}`}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                                // 图片加载失败时隐藏单张图，避免破坏布局
-                                const img = e.target as HTMLImageElement
-                                img.style.display = 'none'
-                            }}
-                        />
-                    ))}
-                </div>
-            </div>
-        )
+        return <CollapsibleImageGallery images={images} />
     }
 
     // 空状态
