@@ -4,19 +4,17 @@ import { useState } from 'react'
 import { ButtonHandle } from '@/components/button-handle'
 import { Button } from '@/components/ui/button'
 import { getAgentPresetLabelById } from '@/constants/agent-presets'
+import { useAgentExecution } from '@/hooks/useAgentExecution'
 import type { AgentNodeType } from '@/types/flow'
 
 export const AgentNode = ({ id, data, selected }: NodeProps<AgentNodeType>) => {
     const [isHovered, setIsHovered] = useState(false)
+    const { isGenerating, execute } = useAgentExecution({
+        nodeId: id,
+        model: data.model,
+        messages: data.messages,
+    })
     const presetLabel = getAgentPresetLabelById(data.agentPresetId)
-
-    const handleExecute = () => {
-        console.log('占位执行逻辑，待接入真实能力', {
-            nodeId: id,
-            model: data.model,
-            messages: data.messages,
-        })
-    }
 
     return (
         <>
@@ -48,7 +46,9 @@ export const AgentNode = ({ id, data, selected }: NodeProps<AgentNodeType>) => {
                 <span className="absolute left-2 top-2 max-w-40 truncate rounded-md border bg-muted px-2 py-0.5 text-[11px] leading-4 text-muted-foreground">
                     {presetLabel}
                 </span>
-                <Button onClick={handleExecute}>执行</Button>
+                <Button disabled={isGenerating} onClick={execute}>
+                    {isGenerating ? '生成中...' : '生成'}
+                </Button>
             </div>
         </>
     )
