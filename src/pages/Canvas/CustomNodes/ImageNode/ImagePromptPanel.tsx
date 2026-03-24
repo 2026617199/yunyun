@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { uploadImage } from '@/api/ai'
 import { GenerationStatus } from '@/constants/enum'
 import useMessage from '@/hooks/useMessage'
@@ -41,7 +42,7 @@ import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from './mock'
 export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const [ratio, setRatio] = useState('1024x1024')
     const [resolution, setResolution] = useState('2K')
-    const [model, setModel] = useState('gemini-3-pro-image-preview')
+    const [model, setModel] = useState('doubao-seedream-4-0')
     const [templateId, setTemplateId] = useState<string>(STYLE_TEMPLATE_MOCK[0].id)
     // 上传成功后的参考图 URL（本地态即可，后续可迁移到 store）
     const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
@@ -489,21 +490,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     return (
         <div className="nodrag nopan nowheel w-170 rounded-3xl border border-slate-200/80 bg-[linear-gradient(160deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.97)_58%,rgba(241,245,249,0.96)_100%)] p-3 shadow-[0_22px_70px_rgba(15,23,42,0.14)] backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between px-1">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-[11px] font-medium tracking-wide text-slate-700">
-                    <IconSparkles size={14} className="text-indigo-500" />
-                    增强输入 · 图片节点
-                </div>
-                <span className="text-[11px] text-slate-500">Node: {nodeId}</span>
-            </div>
 
-            {/* 上方区域：参考图列表 */}
-            <div className="mb-3 rounded-2xl border border-slate-200/80 bg-white/80 p-2">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                    <IconPhoto size={14} className="text-slate-500" />
-                    参考图列表
-                </div>
-                <div className="nodrag nopan nowheel flex gap-2 overflow-x-auto pb-1">
+            {/* 顶部区域：tiptap 增强输入区 */}
+            <div className="relative mb-3 rounded-2xl border border-slate-200/80 bg-white/80 p-2">
+
+                <EditorContent editor={editor} />
+                <div className="nodrag nopan nowheel flex gap-2 overflow-x-auto pb-1 mt-2.5">
                     {/* 上传按钮（固定为第一个） */}
                     <button
                         type="button"
@@ -544,24 +536,6 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                         </button>
                     ))}
                 </div>
-            </div>
-
-            {/* 中间区域：tiptap 增强输入区 */}
-            <div className="relative mb-3 rounded-2xl border border-slate-200/80 bg-white/80 p-2">
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
-                    <div className="inline-flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px]">
-                            <IconAt size={12} /> @ 引用
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px]">
-                            <IconCommand size={12} /> / 命令
-                        </span>
-                    </div>
-                    <span className="text-[11px]">输入 @ 或 / 触发建议</span>
-                </div>
-
-                <EditorContent editor={editor} />
-
                 {/* 建议面板 */}
                 {activeMode && suggestionItems.length > 0 && (
                     <div className="nodrag nopan nowheel absolute right-2 bottom-2 left-2 z-30 max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.16)]">
@@ -612,12 +586,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
             {/* 下方区域：参数控制区 */}
             <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-2.5">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                    <IconWand size={14} className="text-violet-500" />
-                    参数控制区
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-end gap-2">
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">画面比例</label>
                         <Select value={ratio} onValueChange={setRatio}>
@@ -681,31 +650,19 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
 
-                {/* 风格模板只预览，不插入编辑器 */}
-                <div className="mt-2 rounded-xl border border-dashed border-violet-200 bg-violet-50/70 px-2 py-1.5">
-                    <div className="mb-1 text-[11px] font-medium text-violet-700">模板预览（不写入光标）</div>
-                    <p className="line-clamp-2 text-[11px] leading-5 text-violet-800/90">
-                        {currentTemplate.promptPreview}
-                    </p>
-                </div>
-
-                {/* 生成按钮：放在参数控制区底部靠右 */}
-                <div className="mt-3 flex items-center justify-end">
-                    <button
-                        type="button"
-                        className={cn(
-                            'inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                            isGenerating || isUploading
-                                ? 'cursor-not-allowed bg-slate-200 text-slate-500'
-                                : 'bg-indigo-500 text-white hover:bg-indigo-600',
-                        )}
-                        onClick={handleGenerate}
-                        disabled={isGenerating || isUploading}
-                    >
-                        {isGenerating ? '生成中...' : '生成'}
-                    </button>
+                    <div className="ml-auto">
+                        <Button
+                            type="button"
+                            variant="blue"
+                            size="sm"
+                            loading={isGenerating}
+                            onClick={handleGenerate}
+                            disabled={isUploading}
+                        >
+                            生成
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

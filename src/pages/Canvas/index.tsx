@@ -168,7 +168,7 @@ const CanvasFlow = () => {
                 >
                     <Background />
                     <Controls />
-                    <MiniMap />
+                    <MiniMap pannable zoomable />
                     <DevTools />
                 </ReactFlow>
             </div>
