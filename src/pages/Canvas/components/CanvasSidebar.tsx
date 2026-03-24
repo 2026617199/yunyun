@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useReactFlow } from '@xyflow/react'
 
 import { FloatingSidebar } from './FloatingSidebar'
+import type { FloatingSidebarProps } from './FloatingSidebar'
 import { assistantActionToPresetId } from '../constants/canvasConfig'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { AllNodeType, EdgeType } from '@/types/flow'
@@ -10,8 +11,8 @@ export const CanvasSidebar = () => {
     const addNode = useCanvasFlowStore((state) => state.addNode)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
 
-    const handleSidebarAction = useCallback(
-        (actionId: string) => {
+    const handleSidebarAction = useCallback<NonNullable<FloatingSidebarProps['onAction']>>(
+        (actionId) => {
             const centerFlowPosition = screenToFlowPosition({
                 x: window.innerWidth / 2,
                 y: window.innerHeight / 2,

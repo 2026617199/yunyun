@@ -48,13 +48,13 @@ export const CanvasFlow = () => {
         contextMenuTriggerRef.current?.dispatchEvent(contextMenuEvent)
     }, [])
 
-    const handlePaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
+    const handlePaneContextMenu = useCallback((event) => {
         pendingConnectRef.current = null
         setMenuScreenPosition({ x: event.clientX, y: event.clientY })
     }, [])
 
     const handleConnectStart = useCallback(
-        (_: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
+        (_, params) => {
             if (!params?.nodeId || !params?.handleType) {
                 pendingConnectRef.current = null
                 return
