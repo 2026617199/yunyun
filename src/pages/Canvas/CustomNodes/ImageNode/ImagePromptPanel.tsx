@@ -538,7 +538,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                 </div>
                 {/* 建议面板 */}
                 {activeMode && suggestionItems.length > 0 && (
-                    <div className="nodrag nopan nowheel absolute right-2 bottom-2 left-2 z-30 max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.16)]">
+                    <div className="nodrag nopan nowheel absolute right-2 bottom-full left-2 z-30 mb-5 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.16)]">
                         {suggestionItems.map((item, index) => {
                             const isActive = index === activeIndex
                             const title = item.label
