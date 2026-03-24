@@ -151,3 +151,14 @@ export const VIDEO_GENERATION_MODES = [
   { label: '文生视频', value: 'text-to-video' },
   { label: '图生视频', value: 'image-to-video' },
 ];
+
+/**
+ * 画布聊天模型配置。
+ * 说明：当前只开放 deepseek-v3.2，后续新增模型仅需追加配置项。
+ */
+export const CANVAS_CHAT_MODELS = [
+  { id: 1001, name: 'DeepSeek v3.2', model: 'deepseek-v3.2', platform: 'deepseek', platformId: 17 },
+]
+
+/** 画布聊天默认模型 */
+export const DEFAULT_CANVAS_CHAT_MODEL = CANVAS_CHAT_MODELS[0].model

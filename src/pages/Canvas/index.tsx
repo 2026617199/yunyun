@@ -15,9 +15,14 @@ import { ImageNode } from './CustomNodes/ImageNode'
 import { VideoNode } from './CustomNodes/VideoNode'
 import { AgentNode } from './CustomNodes/AgentNode'
 import { FloatingSidebar } from './components/FloatingSidebar'
+import { CanvasChatToolbar } from './components/CanvasChatToolbar'
 import { CanvasContextMenu, type CanvasNodeType } from './components/CanvasContextMenu'
+import { ChatDrawer } from './components/ChatDrawer'
+import { NO_CHAT_PERSONA_ID } from '@/constants/chat-personas'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { AgentPresetId } from '@/constants/agent-presets'
+import { useCanvasChat } from '@/hooks/useCanvasChat'
+import type { ChatPersonaId } from '@/types/NoteGeneration'
 
 import type {
     AllNodeType,
@@ -170,7 +175,7 @@ const CanvasFlow = () => {
                 >
                     <Background />
                     <Controls />
-                    <MiniMap pannable zoomable />
+                    <MiniMap pannable zoomable position='bottom-left' style={{ left: '48px' }} />
                     {/* <DevTools /> */}
                 </ReactFlow>
             </div>
@@ -181,6 +186,9 @@ const CanvasFlow = () => {
 // 外部组件 - 提供 ReactFlowProvider
 const CanvasPage = () => {
     const addNode = useCanvasFlowStore((state) => state.addNode)
+    const [isChatOpen, setIsChatOpen] = useState(false)
+    const [selectedPersonaId, setSelectedPersonaId] = useState<ChatPersonaId>(NO_CHAT_PERSONA_ID)
+    const { messages, isLoading, sendMessage } = useCanvasChat()
 
     // 侧边栏动作处理：保留页面层调度，避免与高频画布渲染耦合。
     const handleSidebarAction = useCallback((actionId: string) => {
@@ -209,6 +217,24 @@ const CanvasPage = () => {
 
                 {/* 悬浮侧边栏：与 CanvasFlow 同级，避免节点移动时不必要重渲染。 */}
                 <FloatingSidebar onAction={handleSidebarAction} />
+
+                {/* 右下圆形聊天工具栏：负责打开抽屉与切换 system 人设。 */}
+                <CanvasChatToolbar
+                    selectedPersonaId={selectedPersonaId}
+                    onSelectPersona={setSelectedPersonaId}
+                    onOpenChat={() => setIsChatOpen(true)}
+                    isChatOpen={isChatOpen}
+                />
+
+                {/* 右侧抽屉聊天窗口：统一走 createChatCompletion，并使用 idb-keyval 持久化会话。 */}
+                <ChatDrawer
+                    open={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    messages={messages}
+                    isLoading={isLoading}
+                    personaId={selectedPersonaId}
+                    onSend={sendMessage}
+                />
             </div>
         </ReactFlowProvider>
     )
