@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { cn } from '@/utils/utils'
 
 import './floatingSidebar.css'
+import { SettingsModal } from './SettingsModal'
 
 // 侧边栏动作项类型
 export type FloatingSidebarItem = {
@@ -89,6 +90,7 @@ const getItemsByRole = (items: FloatingSidebarItem[], role: FloatingSidebarItem[
 // 悬浮侧边栏组件：只负责视觉与占位回调，不耦合业务状态。
 export const FloatingSidebar = ({ items = defaultItems, onAction, className }: FloatingSidebarProps) => {
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     // 顶部主操作。
     const primaryItems = getItemsByRole(items, 'primary')
@@ -100,6 +102,12 @@ export const FloatingSidebar = ({ items = defaultItems, onAction, className }: F
     // 占位点击处理：优先调用 item.onClick，其次派发统一 onAction。
     const handleClick = (item: FloatingSidebarItem) => {
         if (item.disabled) {
+            return
+        }
+
+        if (item.id === 'settings') {
+            setExpandedItemId(null)
+            setIsSettingsOpen(true)
             return
         }
 
@@ -158,18 +166,22 @@ export const FloatingSidebar = ({ items = defaultItems, onAction, className }: F
     }
 
     return (
-        <aside className={cn('canvas-floating-sidebar', className)} aria-label="画布悬浮侧边栏">
-            <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--primary">
-                {renderMenuItems(primaryItems)}
-            </div>
+        <>
+            <aside className={cn('canvas-floating-sidebar', className)} aria-label="画布悬浮侧边栏">
+                <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--primary">
+                    {renderMenuItems(primaryItems)}
+                </div>
 
-            <div className="canvas-floating-sidebar__group">
-                {renderMenuItems(defaultRoleItems)}
-            </div>
+                <div className="canvas-floating-sidebar__group">
+                    {renderMenuItems(defaultRoleItems)}
+                </div>
 
-            <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--bottom">
-                {renderMenuItems(bottomItems)}
-            </div>
-        </aside>
+                <div className="canvas-floating-sidebar__group canvas-floating-sidebar__group--bottom">
+                    {renderMenuItems(bottomItems)}
+                </div>
+            </aside>
+
+            <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+        </>
     )
 }
