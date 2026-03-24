@@ -5,6 +5,7 @@ import { ButtonHandle } from '@/components/button-handle'
 import type { VideoNodeType } from '@/types/flow'
 
 import { VideoContent } from './VideoContent'
+import { VideoPromptPanel } from './VideoPromptPanel'
 import { VideoToolbar } from './VideoToolbar'
 
 /**
@@ -47,7 +48,7 @@ export const VideoNode = ({
             />
 
             <div
-                className="relative flex w-100 min-h-70 flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm transition-transform duration-200 ease-in-out"
+                className="relative flex w-100 min-h-30 flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-transform duration-200 ease-in-out"
                 onMouseEnter={() => {
                     setIsHovered(true)
                 }}
@@ -64,8 +65,25 @@ export const VideoNode = ({
                     />
                 </NodeToolbar>
 
+                {/* 底部增强输入区：固定在节点下方 */}
+                <NodeToolbar
+                    isVisible={selected}
+                    position={Position.Bottom}
+                    offset={18 * zoom}
+                >
+                    <div
+                        className="nodrag nopan nowheel"
+                        style={{
+                            transform: `scale(${zoom})`,
+                            transformOrigin: 'top center',
+                        }}
+                    >
+                        <VideoPromptPanel nodeId={id} />
+                    </div>
+                </NodeToolbar>
+
                 {/* 视频内容区 */}
-                <div className="flex h-full w-full overflow-hidden rounded-md bg-muted/10">
+                <div className="h-full w-full flex-1 min-h-0 bg-muted/10">
                     <VideoContent data={data} />
                 </div>
             </div>

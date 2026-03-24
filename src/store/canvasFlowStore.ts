@@ -8,9 +8,9 @@ import {
 } from '@xyflow/react'
 import { create } from 'zustand'
 
-import { createImageGeneration, getImageTaskStatus } from '@/api/ai'
+import { createImageGeneration, createVideoGeneration, getImageTaskStatus, getVideoTaskStatus } from '@/api/ai'
 import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-presets'
-import type { AllNodeType, EdgeType, ImageGenerationNode } from '@/types/flow'
+import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
 
 /**
@@ -69,6 +69,12 @@ type CanvasFlowState = {
   startImageGeneration: (nodeId: string, payload: any) => Promise<void>
   /** 手动停止图片轮询（防止内存泄露） */
   stopImagePolling: (nodeId: string) => void
+  /** 更新视频节点数据（局部字段 patch） */
+  updateVideoNodeData: (nodeId: string, patch: Partial<VideoGenerationNode>) => void
+  /** 创建视频生成任务并启动轮询 */
+  startVideoGeneration: (nodeId: string, payload: any) => Promise<void>
+  /** 手动停止视频轮询（防止内存泄露） */
+  stopVideoPolling: (nodeId: string) => void
 }
 
 // ==================== 图片生成轮询支持 ====================
@@ -77,6 +83,10 @@ type CanvasFlowState = {
 const IMAGE_POLL_INTERVAL = 2000
 // 轮询控制器：用于中止旧轮询
 const imagePollingControllers = new Map<string, AbortController>()
+// 视频轮询频率（2 秒）
+const VIDEO_POLL_INTERVAL = 2000
+// 视频轮询控制器：用于中止旧轮询
+const videoPollingControllers = new Map<string, AbortController>()
 
 /**
  * 可中断等待函数
@@ -123,6 +133,26 @@ const updateImageNodeInList = (
 }
 
 /**
+ * 更新视频节点数据的通用辅助函数
+ */
+const updateVideoNodeInList = (
+  nodes: AllNodeType[],
+  nodeId: string,
+  updater: (data: VideoGenerationNode) => VideoGenerationNode
+) => {
+  return nodes.map((node) => {
+    if (node.id !== nodeId || node.type !== 'videoNode') {
+      return node
+    }
+
+    return {
+      ...node,
+      data: updater(node.data as VideoGenerationNode),
+    }
+  })
+}
+
+/**
  * 停止某个节点的图片轮询
  */
 const stopImagePollingInternal = (nodeId: string) => {
@@ -131,6 +161,44 @@ const stopImagePollingInternal = (nodeId: string) => {
     controller.abort()
   }
   imagePollingControllers.delete(nodeId)
+}
+
+/**
+ * 停止某个节点的视频轮询
+ */
+const stopVideoPollingInternal = (nodeId: string) => {
+  const controller = videoPollingControllers.get(nodeId)
+  if (controller) {
+    controller.abort()
+  }
+  videoPollingControllers.delete(nodeId)
+}
+
+/**
+ * 兼容多种视频响应结构，提取标准化结果
+ */
+const extractVideoResult = (response: any) => {
+  if (response?.result?.data?.length) {
+    return response.result
+  }
+
+  const metadataUrl = response?.metadata?.url
+  if (metadataUrl) {
+    return {
+      type: 'video',
+      data: [
+        {
+          url: metadataUrl,
+          format: response?.metadata?.format ?? 'mp4',
+        },
+      ],
+    }
+  }
+
+  return {
+    type: 'video',
+    data: [],
+  }
 }
 
 /**
@@ -203,6 +271,87 @@ const pollImageGeneration = async (
     stopImagePollingInternal(nodeId)
     setState((state) => ({
       nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        status: GenerationStatus.FAILED,
+        error: {
+          code: 'POLL_ERROR',
+          message: '轮询失败，请稍后再试',
+        },
+      })),
+    }))
+  }
+}
+
+/**
+ * 视频生成轮询逻辑
+ */
+const pollVideoGeneration = async (
+  taskId: string,
+  nodeId: string,
+  signal: AbortSignal,
+  setState: (updater: (state: CanvasFlowState) => Partial<CanvasFlowState>) => void,
+  getState: () => CanvasFlowState
+) => {
+  try {
+    while (true) {
+      await wait(VIDEO_POLL_INTERVAL, signal)
+      if (signal.aborted) {
+        return
+      }
+
+      const response: any = await getVideoTaskStatus(taskId)
+
+      const currentNode = getState().nodes.find((node) => node.id === nodeId)
+      if (!currentNode || currentNode.type !== 'videoNode') {
+        stopVideoPollingInternal(nodeId)
+        return
+      }
+
+      setState((state) => ({
+        nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => {
+          if (response.status === 'completed') {
+            return {
+              ...data,
+              status: GenerationStatus.COMPLETED,
+              progress: 100,
+              task_id: response.id ?? taskId,
+              result: extractVideoResult(response),
+              error: undefined,
+            }
+          }
+
+          if (response.status === 'failed') {
+            return {
+              ...data,
+              status: GenerationStatus.FAILED,
+              progress: response.progress ?? 0,
+              task_id: response.id ?? taskId,
+              error: response.error ?? {
+                code: 'UNKNOWN_ERROR',
+                message: '生成失败，请稍后再试',
+              },
+            }
+          }
+
+          return {
+            ...data,
+            status: GenerationStatus.IN_PROGRESS,
+            progress: response.progress ?? 0,
+            task_id: response.id ?? taskId,
+          }
+        }),
+      }))
+
+      if (response.status === 'completed' || response.status === 'failed') {
+        stopVideoPollingInternal(nodeId)
+        return
+      }
+    }
+  } catch (pollError) {
+    console.error('视频生成轮询失败:', pollError)
+    stopVideoPollingInternal(nodeId)
+    setState((state) => ({
+      nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => ({
         ...data,
         status: GenerationStatus.FAILED,
         error: {
@@ -451,6 +600,9 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     if (targetNode?.type === 'imageNode') {
       stopImagePollingInternal(nodeId)
     }
+    if (targetNode?.type === 'videoNode') {
+      stopVideoPollingInternal(nodeId)
+    }
     set((state) => ({
       nodes: state.nodes.filter((node) => node.id !== nodeId),
       edges: state.edges.filter(
@@ -535,6 +687,84 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    */
   stopImagePolling: (nodeId) => {
     stopImagePollingInternal(nodeId)
+  },
+
+  /**
+   * 更新视频节点数据（局部 patch）
+   */
+  updateVideoNodeData: (nodeId, patch) => {
+    set((state) => ({
+      nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        ...patch,
+      })),
+    }))
+  },
+
+  /**
+   * 创建视频生成任务并启动轮询
+   */
+  startVideoGeneration: async (nodeId, payload) => {
+    // 先中止旧轮询，避免并发任务冲突
+    stopVideoPollingInternal(nodeId)
+
+    // 更新节点输入参数与状态
+    set((state) => ({
+      nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        ...payload,
+        status: GenerationStatus.QUEUED,
+        progress: 0,
+        error: undefined,
+        result: {
+          type: 'video',
+          data: [],
+        },
+      })),
+    }))
+
+    try {
+      const response: any = await createVideoGeneration(payload)
+      const taskId = response?.id
+
+      if (!taskId) {
+        throw new Error('任务 ID 为空')
+      }
+
+      // 标记为生成中并记录任务 ID
+      set((state) => ({
+        nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => ({
+          ...data,
+          task_id: taskId,
+          status: GenerationStatus.IN_PROGRESS,
+          progress: response?.progress ?? 0,
+        })),
+      }))
+
+      const controller = new AbortController()
+      videoPollingControllers.set(nodeId, controller)
+      pollVideoGeneration(taskId, nodeId, controller.signal, set, get)
+    } catch (startError) {
+      console.error('创建视频生成任务失败:', startError)
+      set((state) => ({
+        nodes: updateVideoNodeInList(state.nodes, nodeId, (data) => ({
+          ...data,
+          status: GenerationStatus.FAILED,
+          error: {
+            code: 'CREATE_TASK_FAILED',
+            message: '创建任务失败，请稍后再试',
+          },
+        })),
+      }))
+      throw startError
+    }
+  },
+
+  /**
+   * 手动停止视频轮询
+   */
+  stopVideoPolling: (nodeId) => {
+    stopVideoPollingInternal(nodeId)
   },
 
   // ==================== 流程事件处理 ====================

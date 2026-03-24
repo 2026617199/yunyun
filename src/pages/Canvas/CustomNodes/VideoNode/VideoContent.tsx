@@ -63,16 +63,14 @@ export const VideoContent = ({ data, onRetry }: VideoContentProps) => {
     // 已完成状态
     if (videoUrl) {
         return (
-            <div className="noflow nopan nowheel h-full w-full overflow-hidden rounded-md bg-background flex items-center justify-center">
-                <video
-                    src={videoUrl}
-                    controls
-                    className="h-full w-full object-cover"
-                    crossOrigin="anonymous"
-                >
-                    你的浏览器不支持视频播放
-                </video>
-            </div>
+            <video
+                src={videoUrl}
+                controls
+                className="noflow nopan nowheel block h-full w-full object-cover object-center"
+                crossOrigin="anonymous"
+            >
+                你的浏览器不支持视频播放
+            </video>
         )
     }
 
