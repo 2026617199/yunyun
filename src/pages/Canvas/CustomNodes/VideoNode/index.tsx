@@ -1,4 +1,4 @@
-import { NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
+import { NodeToolbar, Position, type NodeProps } from '@xyflow/react'
 import { useState } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
@@ -21,8 +21,6 @@ export const VideoNode = ({
     data,
     selected
 }: NodeProps<VideoNodeType>) => {
-    const { zoom } = useViewport()
-
     const [isHovered, setIsHovered] = useState(false)
 
     // console.log('视频节点重新渲染', id)
@@ -57,11 +55,10 @@ export const VideoNode = ({
                 }}
             >
                 {/* 选中时显示工具栏（与图片节点一致，使用 NodeToolbar 管理定位） */}
-                <NodeToolbar isVisible={selected} position={Position.Top} offset={10 * zoom}>
+                <NodeToolbar isVisible={selected} position={Position.Top} offset={10}>
                     <VideoToolbar
                         data={data}
                         selected={selected}
-                        zoom={zoom}
                     />
                 </NodeToolbar>
 
@@ -69,15 +66,9 @@ export const VideoNode = ({
                 <NodeToolbar
                     isVisible={selected}
                     position={Position.Bottom}
-                    offset={18 * zoom}
+                    offset={18}
                 >
-                    <div
-                        className="nodrag nopan nowheel"
-                        style={{
-                            transform: `scale(${zoom})`,
-                            transformOrigin: 'top center',
-                        }}
-                    >
+                    <div className="nodrag nopan nowheel">
                         <VideoPromptPanel nodeId={id} />
                     </div>
                 </NodeToolbar>

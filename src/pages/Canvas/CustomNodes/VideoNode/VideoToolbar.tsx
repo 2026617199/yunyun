@@ -23,7 +23,7 @@ import type { VideoGenerationNode } from '@/types/flow'
 type VideoToolbarProps = {
     data: VideoGenerationNode
     selected: boolean
-    zoom: number
+    zoom?: number
 }
 
 type ActionKey = 'repaint' | 'erase' | 'enhance' | 'outpaint' | 'crop' | 'download' | 'preview'
@@ -38,16 +38,12 @@ type ActionKey = 'repaint' | 'erase' | 'enhance' | 'outpaint' | 'crop' | 'downlo
 export const VideoToolbar = ({
     data,
     selected,
-    zoom,
 }: VideoToolbarProps) => {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
     // 对齐图片工具栏的数据组织方式，统一使用数组映射给 Lightbox
     const videoUrls = data.result?.data?.map((item) => item.url) ?? []
     const currentVideoUrl = videoUrls[0]
-
-    // 占位使用 zoom 变量，保持与图片节点同构的 props 设计
-    void zoom
 
     const toolbarActions = useMemo(() => {
         return [
