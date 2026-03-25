@@ -1,4 +1,4 @@
-import { NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
+import { NodeToolbar, Position, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
@@ -22,7 +22,6 @@ export const ImageNode = memo(({
     selected,
     dragging
 }: NodeProps<ImageNodeType>) => {
-    const { zoom } = useViewport()
     const isDragging = Boolean(dragging)
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
@@ -50,8 +49,8 @@ export const ImageNode = memo(({
                 className={`transition-opacity duration-150 ${handleVisibilityClass}`}
             />
 
-            {/* 顶部工具栏：随节点与画布缩放联动 */}
-            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10 * zoom}>
+            {/* 顶部工具栏：固定偏移，避免订阅 viewport 带来的高频重渲染 */}
+            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10}>
                 <ImageToolbar data={data} selected={selected} />
             </NodeToolbar>
 
@@ -59,15 +58,9 @@ export const ImageNode = memo(({
             <NodeToolbar
                 isVisible={selected && !isDragging}
                 position={Position.Bottom}
-                offset={18 * zoom}
+                offset={18}
             >
-                <div
-                    className="nodrag nopan nowheel"
-                    style={{
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'top center',
-                    }}
-                >
+                <div className="nodrag nopan nowheel">
                     <ImagePromptPanel nodeId={id} />
                 </div>
             </NodeToolbar>
@@ -77,13 +70,7 @@ export const ImageNode = memo(({
             >
                 {/* 图片内容区：提供明确高度基准，避免 h-full + absolute 链路在自适应场景下塌陷 */}
                 <div className="relative flex w-full min-h-62.5 aspect-7/5 overflow-hidden rounded-md bg-muted/10">
-                    {isDragging ? (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                            拖动中...
-                        </div>
-                    ) : (
-                        <ImageContent data={data} />
-                    )}
+                    <ImageContent data={data} />
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-import { NodeToolbar, Position, useViewport, type NodeProps } from '@xyflow/react'
+import { NodeToolbar, Position, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
@@ -22,7 +22,6 @@ export const VideoNode = memo(({
     selected,
     dragging
 }: NodeProps<VideoNodeType>) => {
-    const { zoom } = useViewport()
     const isDragging = Boolean(dragging)
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
@@ -50,8 +49,8 @@ export const VideoNode = memo(({
                 className={`transition-opacity duration-150 ${handleVisibilityClass}`}
             />
 
-            {/* 顶部工具栏：随节点与画布缩放联动 */}
-            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10 * zoom}>
+            {/* 顶部工具栏：固定偏移，避免订阅 viewport 带来的高频重渲染 */}
+            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10}>
                 <VideoToolbar
                     data={data}
                     selected={selected}
@@ -62,15 +61,9 @@ export const VideoNode = memo(({
             <NodeToolbar
                 isVisible={selected && !isDragging}
                 position={Position.Bottom}
-                offset={18 * zoom}
+                offset={18}
             >
-                <div
-                    className="nodrag nopan nowheel"
-                    style={{
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'top center',
-                    }}
-                >
+                <div className="nodrag nopan nowheel">
                     <VideoPromptPanel nodeId={id} />
                 </div>
             </NodeToolbar>
@@ -80,13 +73,7 @@ export const VideoNode = memo(({
             >
                 {/* 视频内容区：与图片节点一致的比例容器，保证展示区域尺寸标准化 */}
                 <div className="relative flex w-full min-h-62.5 aspect-7/5 overflow-hidden rounded-md bg-muted/10">
-                    {isDragging ? (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                            拖动中...
-                        </div>
-                    ) : (
-                        <VideoContent data={data} />
-                    )}
+                    <VideoContent data={data} />
                 </div>
             </div>
         </div>

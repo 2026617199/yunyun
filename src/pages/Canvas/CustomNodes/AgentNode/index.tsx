@@ -7,11 +7,22 @@ import { getAgentPresetLabelById } from '@/constants/agent-presets'
 import { useAgentExecution } from '@/hooks/useAgentExecution'
 import type { AgentNodeType } from '@/types/flow'
 
-export const AgentNode = memo(({ id, data, selected, dragging }: NodeProps<AgentNodeType>) => {
+const areAgentNodePropsEqual = (prev: NodeProps<AgentNodeType>, next: NodeProps<AgentNodeType>) => {
+    return (
+        prev.id === next.id
+        && prev.selected === next.selected
+        && prev.data.model === next.data.model
+        && prev.data.agentPresetId === next.data.agentPresetId
+
+        // 这里是应用比较哎
+        && prev.data.messages === next.data.messages
+    )
+}
+
+export const AgentNode = memo(({ id, data, selected }: NodeProps<AgentNodeType>) => {
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
         : 'invisible opacity-0 group-hover/node:visible group-hover/node:opacity-100'
-    const isDragging = Boolean(dragging)
     const { isGenerating, execute } = useAgentExecution({
         nodeId: id,
         model: data.model,
@@ -43,16 +54,12 @@ export const AgentNode = memo(({ id, data, selected, dragging }: NodeProps<Agent
                 <span className="absolute left-2 top-2 max-w-40 truncate rounded-md border bg-muted px-2 py-0.5 text-[11px] leading-4 text-muted-foreground">
                     {presetLabel}
                 </span>
-                {isDragging ? (
-                    <span className="text-xs text-muted-foreground">拖动中...</span>
-                ) : (
-                    <Button disabled={isGenerating} onClick={execute}>
-                        {isGenerating ? '生成中...' : '生成'}
-                    </Button>
-                )}
+                <Button disabled={isGenerating} onClick={execute}>
+                    {isGenerating ? '生成中...' : '生成'}
+                </Button>
             </div>
         </div>
     )
-})
+}, areAgentNodePropsEqual)
 
 AgentNode.displayName = 'AgentNode'

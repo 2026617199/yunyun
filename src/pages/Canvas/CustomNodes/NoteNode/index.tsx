@@ -77,25 +77,19 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
                 ) : null}
 
                 <div className="flex h-full w-full overflow-hidden rounded-md bg-white ">
-                    {isDragging ? (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                            拖动中...
-                        </div>
-                    ) : (
-                        <NoteContent
-                            content={data.content}
-                            isEditing={Boolean(data.isEditing)}
-                            onStartEdit={() => {
-                                setNoteNodeEditing(id, true)
-                            }}
-                            onStopEdit={() => {
-                                setNoteNodeEditing(id, false)
-                            }}
-                            onContentChange={(value) => {
-                                updateNoteNodeContent(id, value)
-                            }}
-                        />
-                    )}
+                    <NoteContent
+                        content={data.content}
+                        isEditing={Boolean(data.isEditing)}
+                        onStartEdit={() => {
+                            setNoteNodeEditing(id, true)
+                        }}
+                        onStopEdit={() => {
+                            setNoteNodeEditing(id, false)
+                        }}
+                        onContentChange={(value) => {
+                            updateNoteNodeContent(id, value)
+                        }}
+                    />
                 </div>
             </div>
         </div>

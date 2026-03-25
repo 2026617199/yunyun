@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { createChatCompletion } from '@/api/ai'
 import { useMessage } from '@/hooks/useMessage'
@@ -57,17 +57,20 @@ export const useAgentExecution = (options: {
   const [isGenerating, setIsGenerating] = useState(false)
   const { warning, error, success } = useMessage()
 
-  const nodes = useCanvasFlowStore((state) => state.nodes)
-  const edges = useCanvasFlowStore((state) => state.edges)
-  const addNode = useCanvasFlowStore((state) => state.addNode)
-  const onConnect = useCanvasFlowStore((state) => state.onConnect)
-  const updateNoteNodeContent = useCanvasFlowStore((state) => state.updateNoteNodeContent)
-  const setNoteNodeEditing = useCanvasFlowStore((state) => state.setNoteNodeEditing)
-
-  const execute = async () => {
+  const execute = useCallback(async () => {
     if (isGenerating) {
       return
     }
+
+    // 执行时读取最新的 store 快照，避免订阅 nodes/edges 导致频繁重渲染
+    const {
+      nodes,
+      edges,
+      addNode,
+      onConnect,
+      updateNoteNodeContent,
+      setNoteNodeEditing,
+    } = useCanvasFlowStore.getState()
 
     // 验证父节点
     const result = getParentNoteNode(nodeId, nodes, edges)
@@ -129,7 +132,7 @@ export const useAgentExecution = (options: {
     } finally {
       setIsGenerating(false)
     }
-  }
+  }, [error, isGenerating, messages, model, nodeId, success, warning])
 
   return {
     isGenerating,
