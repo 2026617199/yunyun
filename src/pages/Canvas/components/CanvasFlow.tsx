@@ -83,10 +83,11 @@ export const CanvasFlow = () => {
                 return
             }
 
-            if (event.target instanceof Element && !event.target.closest('.react-flow__pane')) {
-                pendingConnectRef.current = null
-                return
-            }
+            // 防止用户在非画布区域释放连接线时意外触发菜单,比如在侧边栏或其他 UI 上。我觉得这个没有必要要，反而会有性能问题
+            // if (event.target instanceof Element && !event.target.closest('.react-flow__pane')) {
+            //     pendingConnectRef.current = null
+            //     return
+            // }
 
             const pointer = 'changedTouches' in event ? event.changedTouches[0] : event
             if (!pointer) {
