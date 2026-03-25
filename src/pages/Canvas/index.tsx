@@ -5,6 +5,7 @@ import { CanvasFlow } from './components/CanvasFlow'
 import { CanvasSidebar } from './components/CanvasSidebar'
 import { CanvasChatToolbar } from './components/CanvasChatToolbar'
 import { ChatDrawer } from './components/ChatDrawer'
+import ReactFlowDevTools from './DevTools'
 import { useCanvasChat } from '@/hooks/useCanvasChat'
 
 // 外部组件 - 提供 ReactFlowProvider 和工具栏
@@ -35,6 +36,9 @@ const CanvasPage = () => {
                     onSend={sendMessage}
                     onStop={stopMessage}
                 />
+
+                {/* 调试工具面板：仅在开发环境显示，生产构建时移除。 */}
+                {import.meta.env.DEV && <ReactFlowDevTools position="top-left" />}
             </div>
         </ReactFlowProvider>
     )
