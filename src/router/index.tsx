@@ -4,7 +4,7 @@ import HomePage from '@/pages/Home'
 
 const router = createBrowserRouter([
     {
-        path: '/canvas',
+        path: '/canvas/:projectId',
         element: <CanvasPage />
     },
     {
