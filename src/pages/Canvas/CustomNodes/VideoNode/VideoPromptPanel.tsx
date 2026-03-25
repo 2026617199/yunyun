@@ -2,7 +2,7 @@ import Mention from '@tiptap/extension-mention'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { IconUpload } from '@tabler/icons-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
 import {
@@ -23,7 +23,7 @@ import { GenerationStatus } from '@/constants/enum'
 import useMessage from '@/hooks/useMessage'
 import { cn } from '@/lib/utils'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
-import type { ImageGenerationNode, NoteNodeData } from '@/types/flow'
+import type { ImageGenerationNode, NoteNodeData, VideoGenerationNode } from '@/types/flow'
 
 import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from '../ImageNode/mock'
 
@@ -34,12 +34,6 @@ const VIDEO_SIZE_OPTIONS = [
 ] as const
 
 export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
-    const [aspectRatio, setAspectRatio] = useState('16:9')
-    const [videoSize, setVideoSize] = useState('1280x720')
-    const [duration, setDuration] = useState(5)
-    const [model, setModel] = useState(VIDEO_MODELS[0]?.model ?? 'sora-2-pro')
-    const [templateId, setTemplateId] = useState<string>(STYLE_TEMPLATE_MOCK[0].id)
-    const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
     const [isUploading, setIsUploading] = useState(false)
 
     const [mentionQuery, setMentionQuery] = useState('')
@@ -52,10 +46,27 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
     const nodes = useCanvasFlowStore((state) => state.nodes)
     const edges = useCanvasFlowStore((state) => state.edges)
     const startVideoGeneration = useCanvasFlowStore((state) => state.startVideoGeneration)
+    const updateVideoNodeData = useCanvasFlowStore((state) => state.updateVideoNodeData)
 
     const currentNode = useMemo(() => {
         return nodes.find((node) => node.id === nodeId)
     }, [nodes, nodeId])
+
+    const currentVideoData = useMemo(() => {
+        if (!currentNode || currentNode.type !== 'videoNode') {
+            return null
+        }
+
+        return currentNode.data as VideoGenerationNode
+    }, [currentNode])
+
+    const aspectRatio = currentVideoData?.aspect_ratio ?? '16:9'
+    const videoSize = currentVideoData?.metadata?.size ?? '1280x720'
+    const duration = currentVideoData?.duration ?? 5
+    const model = currentVideoData?.model ?? (VIDEO_MODELS[0]?.model ?? 'sora-2-pro')
+    const templateId = currentVideoData?.templateId ?? STYLE_TEMPLATE_MOCK[0].id
+    const uploadedUrls = currentVideoData?.uploadedUrls ?? []
+    const promptDraftHtml = currentVideoData?.promptDraftHtml ?? '<p></p>'
 
     const triggerRangeRef = useRef<{ from: number; to: number } | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -322,7 +333,9 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                 return
             }
 
-            setUploadedUrls((prev) => [...prev, nextUrl])
+            updateVideoNodeData(nodeId, {
+                uploadedUrls: [...uploadedUrls, nextUrl],
+            })
             success('上传成功')
         } catch (uploadError: any) {
             console.error('上传图片失败:', uploadError)
@@ -335,7 +348,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     const editor = useEditor({
         extensions: [StarterKit, mentionExtension, slashCommandExtension],
-        content: '<p></p>',
+        content: promptDraftHtml,
         editorProps: {
             attributes: {
                 class: cn(
@@ -392,6 +405,11 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
             },
         },
         onUpdate: ({ editor: currentEditor }) => {
+            updateVideoNodeData(nodeId, {
+                promptDraft: currentEditor.getText(),
+                promptDraftHtml: currentEditor.getHTML(),
+            })
+
             const { from } = currentEditor.state.selection
             const plainText = currentEditor.state.doc.textBetween(0, from, '\n', '\0')
             const mentionMatch = plainText.match(/(^|\s)@([^\s@]*)$/)
@@ -429,6 +447,19 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
         },
     })
 
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        const currentHtml = editor.getHTML()
+        if (currentHtml === promptDraftHtml) {
+            return
+        }
+
+        editor.commands.setContent(promptDraftHtml, { emitUpdate: false })
+    }, [editor, promptDraftHtml])
+
     const suggestionItems = activeMode === 'mention' ? filteredMentionItems : filteredCommandItems
 
     const handleGenerate = async () => {
@@ -449,6 +480,10 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
             aspect_ratio: aspectRatio,
             image_urls: referenceImageUrls,
             style: currentTemplate.name,
+            promptDraft: editor?.getText() ?? '',
+            promptDraftHtml: editor?.getHTML() ?? '<p></p>',
+            templateId,
+            uploadedUrls,
             metadata: {
                 size: videoSize,
                 style: currentTemplate.name,
@@ -561,7 +596,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                 <div className="flex items-end gap-2">
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">画面比例</label>
-                        <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                        <Select
+                            value={aspectRatio}
+                            onValueChange={(value) => {
+                                updateVideoNodeData(nodeId, { aspect_ratio: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择比例" />
                             </SelectTrigger>
@@ -577,7 +617,17 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">视频尺寸</label>
-                        <Select value={videoSize} onValueChange={setVideoSize}>
+                        <Select
+                            value={videoSize}
+                            onValueChange={(value) => {
+                                updateVideoNodeData(nodeId, {
+                                    metadata: {
+                                        ...(currentVideoData?.metadata ?? {}),
+                                        size: value,
+                                    },
+                                })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择尺寸" />
                             </SelectTrigger>
@@ -593,7 +643,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">生成模型</label>
-                        <Select value={model} onValueChange={setModel}>
+                        <Select
+                            value={model}
+                            onValueChange={(value) => {
+                                updateVideoNodeData(nodeId, { model: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
@@ -620,7 +675,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 if (Number.isNaN(next)) {
                                     return
                                 }
-                                setDuration(next)
+                                updateVideoNodeData(nodeId, { duration: next })
                             }}
                             className="h-8 w-26 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-indigo-300"
                         />
@@ -628,7 +683,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">风格模板</label>
-                        <Select value={templateId} onValueChange={setTemplateId}>
+                        <Select
+                            value={templateId}
+                            onValueChange={(value) => {
+                                updateVideoNodeData(nodeId, { templateId: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择风格模板" />
                             </SelectTrigger>

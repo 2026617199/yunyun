@@ -518,6 +518,10 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
         data: {
           model: 'dall-e-3',
           prompt: '',
+          promptDraft: '',
+          promptDraftHtml: '<p></p>',
+          uploadedUrls: [],
+          templateId: 'none',
           status: GenerationStatus.COMPLETED,
           progress: 0,
           result: {
@@ -552,7 +556,11 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
         data: {
           model: 'genai-video',
           prompt: '',
+          promptDraft: '',
+          promptDraftHtml: '<p></p>',
           aspect_ratio: '16:9',
+          uploadedUrls: [],
+          templateId: 'none',
           status: GenerationStatus.COMPLETED,
           progress: 0,
           metadata: { size: '1280x720' },

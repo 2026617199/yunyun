@@ -30,12 +30,16 @@ export interface ImageGenerationNode {
   // ---- 核心输入参数 ----
   model: string; // 使用的模型，如 dall-e-3, gemini-3-pro-image-preview
   prompt: string; // 生成提示词
+  promptDraft?: string; // 输入面板草稿文本
+  promptDraftHtml?: string; // 输入面板草稿富文本
   n?: number; // 生成图片数量 (1-4)
   size?: string; // 图片尺寸比例，如 "16:9", "1024x1024"
   resolution?: string; // 分辨率，如 "1K", "2K", "4K"
   quality?: string; // 图片质量，如 "standard", "hd"
   style?: string; // 图片风格
   image_urls?: string[]; // 参考图片 URL 列表
+  uploadedUrls?: string[]; // 面板上传的参考图 URL 列表
+  templateId?: string; // 面板风格模板 ID
   // ---- 输出结果 ----
   task_id?: string; // 任务 ID（用于轮询）
   result?: {
@@ -62,9 +66,13 @@ export interface VideoGenerationNode {
 
   model: string; // 使用的模型
   prompt: string; // 生成提示词
+  promptDraft?: string; // 输入面板草稿文本
+  promptDraftHtml?: string; // 输入面板草稿富文本
   duration?: number; // 视频时长（秒）
   aspect_ratio: string; // 宽高比，如 "16:9"
   image_urls?: string[]; // 参考图像 URL 列表
+  uploadedUrls?: string[]; // 面板上传的参考图 URL 列表
+  templateId?: string; // 面板风格模板 ID
   style?: string; // 视频风格
   status?: GenerationStatus; // 当前生成状态
   progress?: number; // 进度百分比（0-100）

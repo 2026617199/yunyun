@@ -1,8 +1,8 @@
-import { IconAt, IconCommand, IconPhoto, IconSparkles, IconUpload, IconWand } from '@tabler/icons-react'
+import { IconUpload } from '@tabler/icons-react'
 import Mention from '@tiptap/extension-mention'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
 import {
@@ -40,12 +40,6 @@ import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from './mock'
  * - 本期所有状态均本地 useState 管理，后续可替换为 store/api。
  */
 export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
-    const [ratio, setRatio] = useState('1024x1024')
-    const [resolution, setResolution] = useState('2K')
-    const [model, setModel] = useState('doubao-seedream-4-0')
-    const [templateId, setTemplateId] = useState<string>(STYLE_TEMPLATE_MOCK[0].id)
-    // 上传成功后的参考图 URL（本地态即可，后续可迁移到 store）
-    const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
     // 上传中态，避免重复上传触发
     const [isUploading, setIsUploading] = useState(false)
 
@@ -61,11 +55,27 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const nodes = useCanvasFlowStore((state) => state.nodes)
     const edges = useCanvasFlowStore((state) => state.edges)
     const startImageGeneration = useCanvasFlowStore((state) => state.startImageGeneration)
+    const updateImageNodeData = useCanvasFlowStore((state) => state.updateImageNodeData)
 
     // 当前节点状态（用于禁用生成按钮）
     const currentNode = useMemo(() => {
         return nodes.find((node) => node.id === nodeId)
     }, [nodes, nodeId])
+
+    const currentImageData = useMemo(() => {
+        if (!currentNode || currentNode.type !== 'imageNode') {
+            return null
+        }
+
+        return currentNode.data as ImageGenerationNode
+    }, [currentNode])
+
+    const ratio = currentImageData?.size ?? '1024x1024'
+    const resolution = currentImageData?.resolution ?? '2K'
+    const model = currentImageData?.model ?? 'doubao-seedream-4-0'
+    const templateId = currentImageData?.templateId ?? STYLE_TEMPLATE_MOCK[0].id
+    const uploadedUrls = currentImageData?.uploadedUrls ?? []
+    const promptDraftHtml = currentImageData?.promptDraftHtml ?? '<p></p>'
 
     const resetSuggestionState = () => {
         setActiveMode(null)
@@ -242,10 +252,6 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
         })
     }, [commandQuery])
 
-    const currentTemplate = useMemo(() => {
-        return STYLE_TEMPLATE_MOCK.find((item) => item.id === templateId) ?? STYLE_TEMPLATE_MOCK[0]
-    }, [templateId])
-
     // 沿着边找所有父节点，并合并其图片结果作为参考图来源
     const parentImageUrls = useMemo(() => {
         const parentIds = edges
@@ -341,7 +347,9 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                 return
             }
 
-            setUploadedUrls((prev) => [...prev, nextUrl])
+            updateImageNodeData(nodeId, {
+                uploadedUrls: [...uploadedUrls, nextUrl],
+            })
             success('上传成功')
         } catch (uploadError) {
             console.error('上传图片失败:', uploadError)
@@ -354,7 +362,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     const editor = useEditor({
         extensions: [StarterKit, mentionExtension, slashCommandExtension],
-        content: '<p></p>',
+        content: promptDraftHtml,
         editorProps: {
             attributes: {
                 class: cn(
@@ -415,6 +423,11 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             },
         },
         onUpdate: ({ editor: currentEditor }) => {
+            updateImageNodeData(nodeId, {
+                promptDraft: currentEditor.getText(),
+                promptDraftHtml: currentEditor.getHTML(),
+            })
+
             const { from } = currentEditor.state.selection
             const plainText = currentEditor.state.doc.textBetween(0, from, '\n', '\0')
             const mentionMatch = plainText.match(/(^|\s)@([^\s@]*)$/)
@@ -452,6 +465,19 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
         },
     })
 
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        const currentHtml = editor.getHTML()
+        if (currentHtml === promptDraftHtml) {
+            return
+        }
+
+        editor.commands.setContent(promptDraftHtml, { emitUpdate: false })
+    }, [editor, promptDraftHtml])
+
     const suggestionItems = activeMode === 'mention' ? filteredMentionItems : filteredCommandItems
 
     // 点击生成：创建任务并启动轮询
@@ -474,6 +500,10 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             resolution,
             n: 1,
             image_urls: referenceImageUrls,
+            promptDraft: editor?.getText() ?? '',
+            promptDraftHtml: editor?.getHTML() ?? '<p></p>',
+            templateId,
+            uploadedUrls,
             metadata: {
                 resolution,
             },
@@ -589,7 +619,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                 <div className="flex items-end gap-2">
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">画面比例</label>
-                        <Select value={ratio} onValueChange={setRatio}>
+                        <Select
+                            value={ratio}
+                            onValueChange={(value) => {
+                                updateImageNodeData(nodeId, { size: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择比例" />
                             </SelectTrigger>
@@ -605,7 +640,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">分辨率</label>
-                        <Select value={resolution} onValueChange={setResolution}>
+                        <Select
+                            value={resolution}
+                            onValueChange={(value) => {
+                                updateImageNodeData(nodeId, { resolution: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择分辨率" />
                             </SelectTrigger>
@@ -621,7 +661,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">生成模型</label>
-                        <Select value={model} onValueChange={setModel}>
+                        <Select
+                            value={model}
+                            onValueChange={(value) => {
+                                updateImageNodeData(nodeId, { model: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
@@ -637,7 +682,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
                     <div className="space-y-1">
                         <label className="text-[11px] text-slate-500">风格模板</label>
-                        <Select value={templateId} onValueChange={setTemplateId}>
+                        <Select
+                            value={templateId}
+                            onValueChange={(value) => {
+                                updateImageNodeData(nodeId, { templateId: value })
+                            }}
+                        >
                             <SelectTrigger className="h-8 w-full border-slate-200 bg-white text-xs">
                                 <SelectValue placeholder="选择风格模板" />
                             </SelectTrigger>
