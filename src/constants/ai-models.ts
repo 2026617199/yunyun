@@ -158,6 +158,50 @@ export const VIDEO_GENERATION_MODES = [
  */
 export const CANVAS_CHAT_MODELS = [
   { id: 1001, name: 'DeepSeek v3.2', model: 'deepseek-v3.2', platform: 'deepseek', platformId: 17 },
+  // Anthropic Claude 系列
+  { id: 1002, name: 'Claude Haiku 4.5', model: 'claude-haiku-4-5', platform: 'anthropic', platformId: 11 },
+  { id: 1003, name: 'Claude Sonnet 4.6', model: 'claude-sonnet-4-6', platform: 'anthropic', platformId: 11 },
+  { id: 1004, name: 'Claude Opus 4.6', model: 'claude-opus-4-6', platform: 'anthropic', platformId: 11 },
+  // OpenAI GPT-5 系列
+  { id: 1005, name: 'GPT-5 Pro Official', model: 'gpt-5-pro-official', platform: 'openai', platformId: 1 },
+  { id: 1006, name: 'GPT-5.2 Official', model: 'gpt-5.2-official', platform: 'openai', platformId: 1 },
+  { id: 1007, name: 'GPT-5.3 Codex Official', model: 'gpt-5.3-codex-official', platform: 'openai', platformId: 1 },
+  { id: 1008, name: 'GPT-5', model: 'gpt-5', platform: 'openai', platformId: 1 },
+  { id: 1009, name: 'GPT-5 Codex', model: 'gpt-5-codex', platform: 'openai', platformId: 1 },
+  { id: 1010, name: 'GPT-5 Codex Mini', model: 'gpt-5-codex-mini', platform: 'openai', platformId: 1 },
+  { id: 1011, name: 'GPT-5.1', model: 'gpt-5.1', platform: 'openai', platformId: 1 },
+  { id: 1012, name: 'GPT-5.1 Codex', model: 'gpt-5.1-codex', platform: 'openai', platformId: 1 },
+  { id: 1013, name: 'GPT-5.1 Codex Max', model: 'gpt-5.1-codex-max', platform: 'openai', platformId: 1 },
+  { id: 1014, name: 'GPT-5.1 Codex Mini', model: 'gpt-5.1-codex-mini', platform: 'openai', platformId: 1 },
+  { id: 1015, name: 'GPT-5.2', model: 'gpt-5.2', platform: 'openai', platformId: 1 },
+  { id: 1016, name: 'GPT-5.2 Codex', model: 'gpt-5.2-codex', platform: 'openai', platformId: 1 },
+  { id: 1017, name: 'GPT-5.3 Codex', model: 'gpt-5.3-codex', platform: 'openai', platformId: 1 },
+  { id: 1018, name: 'GPT-5.3 Codex Spark', model: 'gpt-5.3-codex-spark', platform: 'openai', platformId: 1 },
+  { id: 1019, name: 'GPT-5.4', model: 'gpt-5.4', platform: 'openai', platformId: 1 },
+  // Google Gemini 系列
+  { id: 1020, name: 'Gemini 3.1 Pro Preview Official', model: 'gemini-3.1-pro-preview-official', platform: 'google', platformId: 16 },
+  { id: 1021, name: 'Gemini 3.1 Flash Lite Preview Official', model: 'gemini-3.1-flash-lite-preview-official', platform: 'google', platformId: 16 },
+  { id: 1022, name: 'Gemini 3 Pro Official', model: 'gemini-3-pro-official', platform: 'google', platformId: 16 },
+  { id: 1023, name: 'Gemini 3 Pro Preview Official', model: 'gemini-3-pro-preview-official', platform: 'google', platformId: 16 },
+  { id: 1024, name: 'Gemini 3 Flash Official', model: 'gemini-3-flash-official', platform: 'google', platformId: 16 },
+  { id: 1025, name: 'Gemini 3 Flash Preview Official', model: 'gemini-3-flash-preview-official', platform: 'google', platformId: 16 },
+  { id: 1026, name: 'Gemini 3.1 Fast', model: 'gemini-3.1-fast', platform: 'google', platformId: 16 },
+  { id: 1027, name: 'Gemini 3.1 Thinking', model: 'gemini-3.1-thinking', platform: 'google', platformId: 16 },
+  { id: 1028, name: 'Gemini 2.5 Pro Official', model: 'gemini-2.5-pro-official', platform: 'google', platformId: 16 },
+  { id: 1029, name: 'Gemini 2.5 Flash Official', model: 'gemini-2.5-flash-official', platform: 'google', platformId: 16 },
+  { id: 1030, name: 'Gemini 2.5 Flash Lite Official', model: 'gemini-2.5-flash-lite-official', platform: 'google', platformId: 16 },
+  { id: 1031, name: 'Gemini 2.0 Flash Official', model: 'gemini-2.0-flash-official', platform: 'google', platformId: 16 },
+  { id: 1032, name: 'Gemini 2.0 Flash Lite Official', model: 'gemini-2.0-flash-lite-official', platform: 'google', platformId: 16 },
+  // 阿里通义千问系列
+  { id: 1033, name: 'Qwen3 Max', model: 'qwen3-max', platform: 'qwen', platformId: 3 },
+  { id: 1034, name: 'Qwen3.5 Plus', model: 'qwen3.5-plus', platform: 'qwen', platformId: 3 },
+  { id: 1035, name: 'Qwen3.5 Flash', model: 'qwen3.5-flash', platform: 'qwen', platformId: 3 },
+  // 智谱 GLM 系列
+  { id: 1036, name: 'GLM 5', model: 'glm-5', platform: 'chatglm', platformId: 5 },
+  // Moonshot Kimi 系列
+  { id: 1037, name: 'Kimi K2.5', model: 'kimi-k2.5', platform: 'moonshot', platformId: 10 },
+  // MiniMax 系列
+  { id: 1038, name: 'MiniMax M2.5', model: 'MiniMax-M2.5', platform: 'minimax', platformId: 12 },
 ]
 
 /** 画布聊天默认模型 */
