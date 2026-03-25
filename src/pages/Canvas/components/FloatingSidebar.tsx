@@ -1,8 +1,10 @@
 import {
+    IconDeviceFloppy,
     IconHistory,
     IconLayoutGrid,
     IconMessageCircle,
     IconPlus,
+    IconRefresh,
     IconSettings,
     IconSparkles,
 } from '@tabler/icons-react'
@@ -69,6 +71,18 @@ const defaultItems: FloatingSidebarItem[] = [
         id: 'history',
         label: '历史记录',
         icon: <IconHistory size={20} />,
+    },
+    {
+        id: 'save',
+        label: '保存画布',
+        icon: <IconDeviceFloppy size={20} />,
+        role: 'bottom',
+    },
+    {
+        id: 'reset',
+        label: '重置画布',
+        icon: <IconRefresh size={20} />,
+        role: 'bottom',
     },
     {
         id: 'settings',

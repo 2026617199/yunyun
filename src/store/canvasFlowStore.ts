@@ -13,6 +13,19 @@ import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-preset
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
 
+// ==================== 持久化配置 ====================
+
+const CANVAS_STORAGE_KEY = 'canvas-flow-data'
+const CANVAS_STORAGE_VERSION = 1
+
+type CanvasPersistedState = {
+  version: number
+  savedAt: number
+  nodes: AllNodeType[]
+  edges: EdgeType[]
+  nodeIdCounters: { note: number; image: number; video: number; agent: number }
+}
+
 /**
  * 节点类型标识符
  */
@@ -42,11 +55,21 @@ type CanvasFlowState = {
   edges: EdgeType[]
   // 各类型节点的自增计数器
   nodeIdCounters: { note: number; image: number; video: number; agent: number }
+  // 是否已完成数据恢复
+  hydrated: boolean
 
   // === 基础流程事件 ===
   onNodesChange: (changes: NodeChange<AllNodeType>[]) => void
   onEdgesChange: (changes: EdgeChange<EdgeType>[]) => void
   onConnect: (connection: Connection) => void
+
+  // === 持久化操作 ===
+  /** 保存当前图状态到 localStorage */
+  saveGraph: () => void
+  /** 从 localStorage 恢复图状态 */
+  hydrateGraph: () => void
+  /** 重置到上次保存的状态 */
+  resetToSavedGraph: () => void
 
   // === 通用节点操作 ===
   /** 获取下一个指定类型的节点 ID（自增） */
@@ -367,6 +390,81 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   nodes: [],
   edges: [],
   nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
+  hydrated: false,
+
+  // ==================== 持久化方法实现 ====================
+
+  /**
+   * 保存当前图状态到 localStorage
+   */
+  saveGraph: () => {
+    const state = get()
+    const data: CanvasPersistedState = {
+      version: CANVAS_STORAGE_VERSION,
+      savedAt: Date.now(),
+      nodes: state.nodes,
+      edges: state.edges,
+      nodeIdCounters: state.nodeIdCounters,
+    }
+    localStorage.setItem(CANVAS_STORAGE_KEY, JSON.stringify(data))
+  },
+
+  /**
+   * 从 localStorage 恢复图状态
+   */
+  hydrateGraph: () => {
+    if (get().hydrated) return
+
+    try {
+      const raw = localStorage.getItem(CANVAS_STORAGE_KEY)
+      if (!raw) {
+        set({ hydrated: true })
+        return
+      }
+
+      const data = JSON.parse(raw) as CanvasPersistedState
+      if (data.version !== CANVAS_STORAGE_VERSION) {
+        set({ hydrated: true })
+        return
+      }
+
+      set({
+        nodes: data.nodes,
+        edges: data.edges,
+        nodeIdCounters: data.nodeIdCounters,
+        hydrated: true,
+      })
+    } catch {
+      set({ hydrated: true })
+    }
+  },
+
+  /**
+   * 重置到上次保存的状态
+   */
+  resetToSavedGraph: () => {
+    try {
+      const raw = localStorage.getItem(CANVAS_STORAGE_KEY)
+      if (!raw) {
+        set({ nodes: [], edges: [] })
+        return
+      }
+
+      const data = JSON.parse(raw) as CanvasPersistedState
+      if (data.version !== CANVAS_STORAGE_VERSION) {
+        set({ nodes: [], edges: [] })
+        return
+      }
+
+      set({
+        nodes: data.nodes,
+        edges: data.edges,
+        nodeIdCounters: data.nodeIdCounters,
+      })
+    } catch {
+      set({ nodes: [], edges: [] })
+    }
+  },
 
   // ==================== 通用方法实现 ====================
 

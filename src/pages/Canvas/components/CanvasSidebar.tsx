@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useReactFlow } from '@xyflow/react'
+import { toast } from 'sonner'
 
 import { FloatingSidebar } from './FloatingSidebar'
 import type { FloatingSidebarProps } from './FloatingSidebar'
@@ -9,6 +10,8 @@ import type { AllNodeType, EdgeType } from '@/types/flow'
 
 export const CanvasSidebar = () => {
     const addNode = useCanvasFlowStore((state) => state.addNode)
+    const saveGraph = useCanvasFlowStore((state) => state.saveGraph)
+    const resetToSavedGraph = useCanvasFlowStore((state) => state.resetToSavedGraph)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
 
     const handleSidebarAction = useCallback<NonNullable<FloatingSidebarProps['onAction']>>(
@@ -28,6 +31,14 @@ export const CanvasSidebar = () => {
                 case 'create-video':
                     addNode('video', centerFlowPosition)
                     break
+                case 'save':
+                    saveGraph()
+                    toast.success('画布已保存')
+                    break
+                case 'reset':
+                    resetToSavedGraph()
+                    toast.info('画布已重置')
+                    break
                 default:
                     if (assistantActionToPresetId[actionId]) {
                         addNode('agent', centerFlowPosition, {
@@ -37,7 +48,7 @@ export const CanvasSidebar = () => {
                     break
             }
         },
-        [addNode, screenToFlowPosition]
+        [addNode, saveGraph, resetToSavedGraph, screenToFlowPosition]
     )
 
     return <FloatingSidebar onAction={handleSidebarAction} />

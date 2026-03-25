@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     ReactFlow,
     Background,
@@ -21,11 +21,18 @@ export const CanvasFlow = () => {
     // 通过 zustand 读取图状态，避免业务动作散落在多个组件。
     const nodes = useCanvasFlowStore((state) => state.nodes)
     const edges = useCanvasFlowStore((state) => state.edges)
+    const hydrated = useCanvasFlowStore((state) => state.hydrated)
     const onNodesChange = useCanvasFlowStore((state) => state.onNodesChange)
     const onEdgesChange = useCanvasFlowStore((state) => state.onEdgesChange)
     const onConnect = useCanvasFlowStore((state) => state.onConnect)
     const addNode = useCanvasFlowStore((state) => state.addNode)
+    const hydrateGraph = useCanvasFlowStore((state) => state.hydrateGraph)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
+
+    // 页面加载时恢复数据
+    useEffect(() => {
+        hydrateGraph()
+    }, [hydrateGraph])
 
     const contextMenuTriggerRef = useRef<HTMLDivElement | null>(null)
     const [menuScreenPosition, setMenuScreenPosition] = useState({ x: 0, y: 0 })
