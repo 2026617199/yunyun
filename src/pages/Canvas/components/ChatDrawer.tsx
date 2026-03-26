@@ -46,13 +46,13 @@ export const ChatDrawer = ({
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-            <DialogContent aria-label="AI 对话抽屉">
+            <DialogContent aria-label="AI 对话抽屉" className="border-neutral-700 bg-neutral-900 text-neutral-100">
                 <div className="flex h-full flex-col">
-                    <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                        <DialogTitle>AI 对话</DialogTitle>
+                    <header className="flex items-center justify-between border-b border-neutral-700 px-4 py-3">
+                        <DialogTitle className="text-neutral-100">AI 对话</DialogTitle>
                         <button
                             type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
                             onClick={onClose}
                         >
                             <IconX size={18} />

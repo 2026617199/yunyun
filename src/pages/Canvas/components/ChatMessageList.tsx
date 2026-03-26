@@ -14,7 +14,7 @@ export const ChatMessageList = ({ messages, isLoading = false }: ChatMessageList
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {messages.length === 0 && (
                 <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs text-slate-500">
-                    输入内容开始对话，历史会在首条消息发送时写入 IndexedDB。
+                    输入内容开始对话，页面刷新数据会丢失。
                 </div>
             )}
 
