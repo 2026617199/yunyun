@@ -57,21 +57,21 @@ const defaultItems: FloatingSidebarItem[] = [
             { id: 'short-video-script-agent', label: '爆款短视频脚本智能助手' },
         ],
     },
-    {
-        id: 'layout',
-        label: '布局工具',
-        icon: <IconLayoutGrid size={20} />,
-    },
-    {
-        id: 'comment',
-        label: '注释面板',
-        icon: <IconMessageCircle size={20} />,
-    },
-    {
-        id: 'history',
-        label: '历史记录',
-        icon: <IconHistory size={20} />,
-    },
+    // {
+    //     id: 'layout',
+    //     label: '布局工具',
+    //     icon: <IconLayoutGrid size={20} />,
+    // },
+    // {
+    //     id: 'comment',
+    //     label: '注释面板',
+    //     icon: <IconMessageCircle size={20} />,
+    // },
+    // {
+    //     id: 'history',
+    //     label: '历史记录',
+    //     icon: <IconHistory size={20} />,
+    // },
     {
         id: 'save',
         label: '保存画布',
