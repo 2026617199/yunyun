@@ -112,7 +112,7 @@ export const IMAGE_MODELS = [
   // { id: 1, name: 'doubao-seedream-4-0', model: 'doubao-seedream-4-0', platform: 'Seedream' },
   // { id: 2, name: 'doubao-seedream-4-5', model: 'doubao-seedream-4-5', platform: 'Seedream' },
   { id: 3, name: '豆包 Seedream 5.0', model: 'doubao-seedream-5-0', platform: 'Seedream' },
-  { id: 4, name: '谷歌 Gemini 3 Pro', model: 'gemini-3-pro-image-preview-official', platform: 'google' },
+  { id: 4, name: '谷歌 Gemini 3 Pro', model: 'gemini-3-pro-image-preview', platform: 'google' },
 ];
 
 /** 图片尺寸配置 */
