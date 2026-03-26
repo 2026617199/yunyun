@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios'
 
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapisrrrrrrrr.com'
 
 const aiService = axios.create({
   baseURL: AI_BASE_URL,
