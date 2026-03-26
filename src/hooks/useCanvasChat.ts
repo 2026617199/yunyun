@@ -5,8 +5,9 @@
  * - 提供画布聊天能力的 React Hook。
  * - 负责消息收发、人格提示词注入与错误提示。
  * - 对外暴露消息列表、加载态及发送/清空方法，供 Canvas 页面复用。
+ * - 支持聊天历史自动保存到 IndexedDB。
  */
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { createChatCompletion } from '@/api/ai'
 import { DEFAULT_CANVAS_CHAT_MODEL } from '@/constants/ai-models'
@@ -237,11 +238,19 @@ export const useCanvasChat = () => {
     setMessages([])
   }
 
+  /**
+   * 设置消息列表（用于从历史记录加载）。
+   */
+  const setMessagesDirectly = useCallback((newMessages: NoteGenerationMessage[]) => {
+    setMessages(newMessages)
+  }, [])
+
   return {
     messages,
     isLoading,
     sendMessage,
     stopMessage,
     clearLocalMessages,
+    setMessages: setMessagesDirectly,
   }
 }
