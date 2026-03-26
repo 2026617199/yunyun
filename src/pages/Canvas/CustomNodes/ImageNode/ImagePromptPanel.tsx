@@ -73,7 +73,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     const ratio = currentImageData?.size ?? '1024x1024'
     const resolution = currentImageData?.resolution ?? '2K'
-    const model = currentImageData?.model ?? 'doubao-seedream-4-0'
+    const model = currentImageData?.model ?? 'doubao-seedream-5-0'
     const aspectRatio = currentImageData?.aspectRatio ?? '1:1'
     const uploadedUrls = currentImageData?.uploadedUrls ?? []
     const promptDraftHtml = currentImageData?.promptDraftHtml ?? '<p></p>'
