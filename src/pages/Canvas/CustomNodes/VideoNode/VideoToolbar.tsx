@@ -77,7 +77,7 @@ export const VideoToolbar = ({
     return (
         <>
             <div
-                className={`nodrag nopan nowheel inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 shadow-md transition-all duration-200 ${selected
+                className={`nodrag nopan nowheel inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-800/95 px-2 shadow-md ${selected
                     ? 'translate-y-0 scale-100 opacity-100'
                     : '-translate-y-2 scale-95 opacity-0'
                     }`}
@@ -91,9 +91,9 @@ export const VideoToolbar = ({
                             key={item.key}
                             type="button"
                             onClick={() => handleAction(item.key)}
-                            className={`nodrag nopan nowheel inline-flex h-8 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors ${isActive
-                                ? 'border-sky-300 bg-sky-50 text-sky-700'
-                                : 'border-transparent bg-white text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-800 active:border-slate-300 active:bg-slate-100 active:text-slate-900'
+                            className={`nodrag nopan nowheel inline-flex h-8 items-center gap-1 rounded-lg border px-2 text-xs font-medium ${isActive
+                                ? 'border-neutral-500 bg-neutral-600 text-neutral-100'
+                                : 'border-transparent bg-neutral-700 text-neutral-200 hover:border-neutral-500 hover:bg-neutral-600 hover:text-neutral-100 active:border-neutral-400 active:bg-neutral-500 active:text-neutral-50'
                                 }`}
                             title={item.label}
                             aria-label={item.label}
