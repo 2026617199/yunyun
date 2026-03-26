@@ -219,6 +219,8 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                     maxZoom={2}
                     colorMode='dark'
                     deleteKeyCode={['Backspace', 'Delete']}
+                    panOnDrag={[1]}
+                    selectionOnDrag={true}
                 >
                     <Background />
                     <Controls>

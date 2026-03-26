@@ -1,4 +1,4 @@
-import { NodeToolbar, Position, type NodeProps } from '@xyflow/react'
+import { NodeToolbar, Position, type NodeProps, useStore } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
@@ -25,9 +25,13 @@ export const ImageNode = memo(({
 }: NodeProps<ImageNodeType>) => {
     const isDragging = Boolean(dragging)
     const { zoom } = useNodeScale()
+    // 获取选中节点数量，框选多节点时不显示工具栏
+    const selectedNodesCount = useStore((state) => state.nodes.filter((n) => n.selected).length)
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
         : 'invisible opacity-0 group-hover/node:visible group-hover/node:opacity-100'
+    // 单选且未拖拽时显示工具栏
+    const shouldShowToolbar = selected && !isDragging && selectedNodesCount <= 1
 
     // console.log('图片节点重新渲染', id)
 
@@ -52,7 +56,7 @@ export const ImageNode = memo(({
             />
 
             {/* 顶部工具栏：随视口缩放同步变化 */}
-            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10 * zoom}>
+            <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} offset={10 * zoom}>
                 <div style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom center' }}>
                     <ImageToolbar nodeId={id} data={data} selected={selected} />
                 </div>
@@ -60,7 +64,7 @@ export const ImageNode = memo(({
 
             {/* 底部增强输入区：随视口缩放同步变化 */}
             <NodeToolbar
-                isVisible={selected && !isDragging}
+                isVisible={shouldShowToolbar}
                 position={Position.Bottom}
                 offset={18 * zoom}
             >

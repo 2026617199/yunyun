@@ -1,4 +1,4 @@
-import { NodeResizer, Position, type NodeProps } from '@xyflow/react'
+import { NodeResizer, Position, type NodeProps, useStore } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
@@ -18,6 +18,10 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
     const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
     const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
     const isDragging = Boolean(dragging)
+    // 获取选中节点数量，框选多节点时不显示工具栏
+    const selectedNodesCount = useStore((state) => state.nodes.filter((n) => n.selected).length)
+    // 单选且未拖拽时显示工具栏
+    const shouldShowToolbar = selected && !isDragging && selectedNodesCount <= 1
 
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
@@ -59,7 +63,7 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
                 }}
                 className="relative flex h-full w-full flex-col gap-2 rounded-xl border"
             >
-                {selected && !isDragging ? (
+                {shouldShowToolbar ? (
                     <NoteToolbar
                         onDuplicate={() => {
                             duplicateNode(id)
