@@ -116,7 +116,7 @@ export default function HomePage() {
 
             {/* 创建项目弹窗 */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-auto rounded-lg">
+                <DialogContent>
                     <DialogTitle>创建新项目</DialogTitle>
                     <div className="py-4">
                         <label className="block text-sm text-gray-600 mb-2">项目名称（可选）</label>
@@ -141,7 +141,7 @@ export default function HomePage() {
 
             {/* 删除确认弹窗 */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogContent className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-auto rounded-lg">
+                <DialogContent>
                     <DialogTitle>删除项目</DialogTitle>
                     <div className="py-4">
                         <p className="text-gray-600">
