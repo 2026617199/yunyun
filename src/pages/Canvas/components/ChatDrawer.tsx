@@ -2,7 +2,7 @@
  * AI 对话抽屉组件
  * 支持聊天消息发送、历史记录管理等功能
  */
-import { IconClock, IconPlayerStop, IconSend, IconTrash, IconX } from '@tabler/icons-react'
+import { IconClock, IconPlus, IconPlayerStop, IconSend, IconTrash, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
@@ -151,6 +151,13 @@ export const ChatDrawer = ({
         [deleteSessionById, currentSession, clearLocalMessages],
     )
 
+    // 新建聊天
+    const handleNewChat = useCallback(async () => {
+        await createNewSession(selectedPersonaId)
+        clearLocalMessages()
+        setShowHistory(false)
+    }, [createNewSession, selectedPersonaId, clearLocalMessages])
+
     return (
         <Drawer open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
             <DrawerContent
@@ -203,6 +210,16 @@ export const ChatDrawer = ({
                                     ))}
                                 </SelectContent>
                             </Select>
+
+                            {/* 新建聊天按钮 */}
+                            <button
+                                type="button"
+                                title="新建聊天"
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                                onClick={handleNewChat}
+                            >
+                                <IconPlus size={16} />
+                            </button>
 
                             {/* 历史记录按钮 */}
                             <button
