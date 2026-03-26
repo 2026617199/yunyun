@@ -1,7 +1,7 @@
 import { IconPlayerStop, IconSend, IconTrash, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useResizableWidth } from '@/hooks/useResizableWidth'
@@ -79,8 +79,8 @@ export const ChatDrawer = ({
     }, [clearLocalMessages])
 
     return (
-        <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-            <DialogContent
+        <Drawer open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+            <DrawerContent
                 aria-label="AI 对话抽屉"
                 className={cn(
                     'border-neutral-700 bg-neutral-900 text-neutral-100 transition-none',
@@ -100,7 +100,7 @@ export const ChatDrawer = ({
                 <div className="flex h-full flex-col">
                     {/* Header */}
                     <header className="flex items-center justify-between border-b border-neutral-700 px-4 py-3">
-                        <DialogTitle className="text-neutral-100">AI 对话</DialogTitle>
+                        <DrawerTitle className="text-neutral-100">AI 对话</DrawerTitle>
                         <button
                             type="button"
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
@@ -184,7 +184,7 @@ export const ChatDrawer = ({
                         </div>
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </DrawerContent>
+        </Drawer>
     )
 }
