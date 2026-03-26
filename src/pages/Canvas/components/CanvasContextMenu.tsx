@@ -21,18 +21,27 @@ export const CanvasContextMenu = ({ children, onCreateNode, onOpenChange }: Canv
     return (
         <ContextMenu onOpenChange={onOpenChange}>
             <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-            <ContextMenuContent className="w-52">
-                <ContextMenuLabel>创建节点</ContextMenuLabel>
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={() => onCreateNode('note')}>
+            <ContextMenuContent className="w-52 bg-neutral-800/95 border-neutral-600">
+                <ContextMenuLabel className="text-neutral-300">创建节点</ContextMenuLabel>
+                <ContextMenuSeparator className="bg-neutral-600" />
+                <ContextMenuItem
+                    className="text-neutral-200 focus:bg-neutral-700 focus:text-neutral-100"
+                    onSelect={() => onCreateNode('note')}
+                >
                     <IconNote size={16} />
                     新建便签节点
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => onCreateNode('image')}>
+                <ContextMenuItem
+                    className="text-neutral-200 focus:bg-neutral-700 focus:text-neutral-100"
+                    onSelect={() => onCreateNode('image')}
+                >
                     <IconPhoto size={16} />
                     新建图片节点
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => onCreateNode('video')}>
+                <ContextMenuItem
+                    className="text-neutral-200 focus:bg-neutral-700 focus:text-neutral-100"
+                    onSelect={() => onCreateNode('video')}
+                >
                     <IconVideo size={16} />
                     新建视频节点
                 </ContextMenuItem>
