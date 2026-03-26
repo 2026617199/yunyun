@@ -1,14 +1,13 @@
 import axios, { AxiosRequestConfig } from 'axios'
 
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
-const AI_TOKEN = import.meta.env.VITE_AI_TOKEN || ''
 
 const aiService = axios.create({
   baseURL: AI_BASE_URL,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    ...(AI_TOKEN ? { Authorization: `Bearer ${AI_TOKEN}` } : {}),
+    Authorization: 'Bearer sk-8ngj8WD671ZFioHc2qypEJFQwhWeims435RtteF28IPxgHWR',
   },
   timeout: 300000,
 })

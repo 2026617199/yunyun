@@ -55,7 +55,6 @@ export function getVideoTaskStatus(id: string) {
 // - stream: false 或不传 → 返回完整响应
 // - stream: true → 返回 async generator，逐块 yield 文本内容
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
-const AI_TOKEN = import.meta.env.VITE_AI_TOKEN || ''
 
 export async function createChatCompletion(data: any, signal?: AbortSignal) {
   if (data.stream) {
@@ -64,8 +63,7 @@ export async function createChatCompletion(data: any, signal?: AbortSignal) {
       signal,
       headers: {
         Accept: 'text/event-stream',
-        'Content-Type': 'application/json',
-        ...(AI_TOKEN ? { Authorization: `Bearer ${AI_TOKEN}` } : {}),
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(data),
     })
