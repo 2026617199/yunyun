@@ -70,8 +70,8 @@ export const VIDEO_MODELS = [
   // { id: 8, name: 'Veo 3.1 Fast Official', model: 'Veo3.1-fast-official', platform: 'google', platformId: 16 },
   // 字节豆包 Seedance 系列
   // TODO 这里先做成假的，后续再提花
-  { id: 9, name: 'Veo3 Official', model: 'doubao-seedance-1-0-pro-fast', platform: 'doubao', platformId: 2 },
-  { id: 10, name: 'Kling Video O1', model: 'doubao-seedance-1-0-pro-quality', platform: 'doubao', platformId: 2 },
+  { id: 9, name: 'Doubao Seedance 1.0 Pro Fast', model: 'doubao-seedance-1-0-pro-fast', platform: 'doubao', platformId: 2 },
+  { id: 10, name: 'Doubao Seedance 1.0 Pro Quality', model: 'doubao-seedance-1-0-pro-quality', platform: 'doubao', platformId: 2 },
   { id: 11, name: 'Doubao Seedance 1.5 Pro', model: 'doubao-seedance-1-5-pro', platform: 'doubao', platformId: 2 },
   // MiniMax
   // { id: 12, name: 'MiniMax-Hailuo-02', model: 'MiniMax-Hailuo-02', platform: 'minimax', platformId: 12 },
