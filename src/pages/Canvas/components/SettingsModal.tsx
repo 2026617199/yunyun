@@ -4,6 +4,9 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Modal, ModalContent, ModalDescription, ModalTitle } from '@/components/ui/modal'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CANVAS_CHAT_MODELS } from '@/constants/ai-models'
+import { CANVAS_CHAT_PERSONAS, NO_CHAT_PERSONA_ID } from '@/constants/chat-personas'
+import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { cn } from '@/utils/utils'
 
 type SettingsModalProps = {
@@ -40,7 +43,6 @@ const sectionPlaceholderMap = {
         { label: '框选行为', type: 'select', options: ['仅节点', '节点 + 连线'] },
     ],
     ai: [
-        { label: '默认模型', type: 'select', options: ['gpt-4o-mini', 'claude-3.5-sonnet', 'deepseek-chat'] },
         { label: '失败重试', type: 'select', options: ['0 次', '1 次', '2 次'] },
         { label: '安全等级', type: 'select', options: ['保守', '平衡', '激进'] },
     ],
@@ -75,6 +77,7 @@ const sectionIdSet = new Set(settingSections.map((item) => item.id))
 
 export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     const [activeSection, setActiveSection] = useState(settingSections[0].id)
+    const { defaultModel, defaultPersonaId, setDefaultModel, setDefaultPersonaId, resetToDefault } = useChatSettingsStore()
 
     const currentSectionItems = useMemo(() => {
         if (!sectionIdSet.has(activeSection)) {
@@ -126,6 +129,44 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
 
                         <main className="min-h-0 overflow-auto px-5 py-4">
                             <div className="space-y-3">
+                                {/* AI 助手 - 真实配置 */}
+                                {activeSection === 'ai' && (
+                                    <>
+                                        <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                            <div className="mb-2 text-sm font-medium text-slate-800">默认模型</div>
+                                            <Select value={defaultModel} onValueChange={setDefaultModel}>
+                                                <SelectTrigger className="h-9 w-full border-slate-200 bg-white text-sm text-slate-700">
+                                                    <SelectValue placeholder="请选择模型" />
+                                                </SelectTrigger>
+                                                <SelectContent align="end" className="max-h-60">
+                                                    {CANVAS_CHAT_MODELS.map((m) => (
+                                                        <SelectItem key={m.model} value={m.model}>
+                                                            {m.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </section>
+
+                                        <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                            <div className="mb-2 text-sm font-medium text-slate-800">默认人设</div>
+                                            <Select value={defaultPersonaId} onValueChange={(v) => setDefaultPersonaId(v as typeof defaultPersonaId)}>
+                                                <SelectTrigger className="h-9 w-full border-slate-200 bg-white text-sm text-slate-700">
+                                                    <SelectValue placeholder="请选择人设" />
+                                                </SelectTrigger>
+                                                <SelectContent align="end">
+                                                    <SelectItem value={NO_CHAT_PERSONA_ID}>无（默认）</SelectItem>
+                                                    {CANVAS_CHAT_PERSONAS.map((persona) => (
+                                                        <SelectItem key={persona.id} value={persona.id}>
+                                                            {persona.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </section>
+                                    </>
+                                )}
+
                                 {currentSectionItems.map((item) => (
                                     <section key={item.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                                         <div className="mb-2 text-sm font-medium text-slate-800">{item.label}</div>
@@ -171,17 +212,17 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                     </div>
 
                     <footer className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
-                        <Button variant="blue" size="sm" onClick={() => undefined}>
+                        <Button variant="blue" size="sm" onClick={resetToDefault}>
                             <IconRestore size={14} />
-                            恢复默认（占位）
+                            恢复默认
                         </Button>
                         <div className="flex items-center gap-2">
                             <Button size="sm" onClick={onClose}>
                                 取消
                             </Button>
-                            <Button size="sm" variant="blue" onClick={() => undefined}>
+                            <Button size="sm" variant="blue" onClick={onClose}>
                                 <IconDeviceFloppy size={14} />
-                                保存（占位）
+                                保存
                             </Button>
                         </div>
                     </footer>

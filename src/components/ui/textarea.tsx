@@ -11,7 +11,7 @@ const Textarea = React.forwardRef<
             ref={ref}
             data-slot="textarea"
             className={cn(
-                "border-input bg-input/30 dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 flex w-full rounded-xl border px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50",
+                "w-full rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 disabled:opacity-50",
                 className
             )}
             {...props}

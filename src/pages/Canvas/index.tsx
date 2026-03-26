@@ -14,7 +14,7 @@ const CanvasPage = () => {
     // 从路由参数获取项目 ID
     const { projectId } = useParams<{ projectId: string }>()
     const [isChatOpen, setIsChatOpen] = useState(false)
-    const { messages, isLoading } = useCanvasChat()
+    const { messages, isLoading, sendMessage, stopMessage, clearLocalMessages } = useCanvasChat()
 
     return (
         <ReactFlowProvider>
@@ -36,6 +36,9 @@ const CanvasPage = () => {
                     onClose={() => setIsChatOpen(false)}
                     messages={messages}
                     isLoading={isLoading}
+                    sendMessage={sendMessage}
+                    stopMessage={stopMessage}
+                    clearLocalMessages={clearLocalMessages}
                 />
 
                 {/* 调试工具面板：仅在开发环境显示，生产构建时移除。 */}
