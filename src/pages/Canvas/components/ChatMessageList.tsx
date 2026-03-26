@@ -24,7 +24,7 @@ export const ChatMessageList = ({ messages, isLoading = false }: ChatMessageList
                                 'max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-6 whitespace-pre-wrap',
                                 isUser
                                     ? 'ml-auto bg-blue-600 text-white'
-                                    : 'mr-auto border border-slate-200 bg-slate-50 text-slate-700',
+                                    : 'mr-auto bg-neutral-700 text-neutral-100',
                             )}
                         >
                             {message.content}
@@ -34,7 +34,7 @@ export const ChatMessageList = ({ messages, isLoading = false }: ChatMessageList
             })}
 
             {shouldShowThinking && (
-                <div className="mr-auto max-w-[90%] rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                <div className="mr-auto max-w-[90%] rounded-2xl bg-neutral-700 px-3 py-2 text-sm text-neutral-400">
                     AI 正在思考中...
                 </div>
             )}
