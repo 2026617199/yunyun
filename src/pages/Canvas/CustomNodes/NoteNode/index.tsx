@@ -1,5 +1,5 @@
 import { NodeResizer, Position, type NodeProps } from '@xyflow/react'
-import { memo, useRef } from 'react'
+import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
@@ -9,7 +9,9 @@ import { NoteContent } from './NoteContent'
 import { NoteToolbar } from './NoteToolbar'
 
 // NoteNode：最小可用文本节点实现，保留编辑、预览、缩放与工具栏动作。
-export const NoteNode = memo(({ id, data, selected, width, height, dragging }: NodeProps<NoteNodeType>) => {
+export const NoteNode = memo(({ id, data, selected, width, height, dragging, ...rest }: NodeProps<NoteNodeType>) => {
+    // console.log('测试会不会打印');
+    // console.log(rest);
     const setNoteNodeEditing = useCanvasFlowStore((state) => state.setNoteNodeEditing)
     const updateNoteNodeContent = useCanvasFlowStore((state) => state.updateNoteNodeContent)
     const resizeNoteNode = useCanvasFlowStore((state) => state.resizeNoteNode)
@@ -19,7 +21,6 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
 
     const inputHandleId = data.inputHandleId ?? 'input'
     const outputHandleId = data.outputHandleId ?? 'output'
-    const latestSizeRef = useRef<{ width: number; height: number } | null>(null)
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
         : 'invisible opacity-0 group-hover/node:visible group-hover/node:opacity-100'
@@ -30,13 +31,8 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
             <NodeResizer
                 isVisible={selected && !isDragging}
                 lineClassName="!border !border-muted-foreground"
-                onResize={(_, { width, height }) => {
-                    latestSizeRef.current = { width, height }
-                }}
                 onResizeEnd={(_, { width, height }) => {
-                    const nextSize = latestSizeRef.current ?? { width, height }
-                    resizeNoteNode(id, nextSize.width, nextSize.height)
-                    latestSizeRef.current = null
+                    resizeNoteNode(id, width, height)
                 }}
             />
 
@@ -86,7 +82,7 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
                         onStopEdit={() => {
                             setNoteNodeEditing(id, false)
                         }}
-                        onContentChange={(value) => {
+                        onContentBlur={(value) => {
                             updateNoteNodeContent(id, value)
                         }}
                     />
