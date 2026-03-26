@@ -1,12 +1,10 @@
 import { IconX } from '@tabler/icons-react'
-import { useMemo, useState } from 'react'
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { DEFAULT_CANVAS_CHAT_MODEL } from '@/constants/ai-models'
-import { NO_CHAT_PERSONA_ID } from '@/constants/chat-personas'
-import type { ChatPersonaId, NoteGenerationMessage } from '@/types/NoteGeneration'
+import { useResizableWidth } from '@/hooks/useResizableWidth'
+import { cn } from '@/lib/utils'
+import type { NoteGenerationMessage } from '@/types/NoteGeneration'
 
-import { ChatComposer } from './ChatComposer'
 import { ChatMessageList } from './ChatMessageList'
 
 type ChatDrawerProps = {
@@ -14,8 +12,6 @@ type ChatDrawerProps = {
     onClose: () => void
     messages: NoteGenerationMessage[]
     isLoading: boolean
-    onSend: (payload: { content: string; personaId: ChatPersonaId; model: string }) => Promise<void>
-    onStop: () => void
 }
 
 export const ChatDrawer = ({
@@ -23,30 +19,28 @@ export const ChatDrawer = ({
     onClose,
     messages,
     isLoading,
-    onSend,
-    onStop,
 }: ChatDrawerProps) => {
-    const [inputValue, setInputValue] = useState('')
-    const [model, setModel] = useState(DEFAULT_CANVAS_CHAT_MODEL)
-    const [personaId, setPersonaId] = useState<ChatPersonaId>(NO_CHAT_PERSONA_ID)
-
-    const canSend = useMemo(() => {
-        return inputValue.trim().length > 0 && !isLoading
-    }, [inputValue, isLoading])
-
-    const handleSend = async () => {
-        if (!canSend) {
-            return
-        }
-
-        const content = inputValue.trim()
-        setInputValue('')
-        await onSend({ content, personaId, model })
-    }
+    const { width, isResizing, handlePointerDown } = useResizableWidth()
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-            <DialogContent aria-label="AI 对话抽屉" className="border-neutral-700 bg-neutral-900 text-neutral-100">
+            <DialogContent
+                aria-label="AI 对话抽屉"
+                className={cn(
+                    'border-neutral-700 bg-neutral-900 text-neutral-100 transition-none',
+                    isResizing && 'select-none',
+                )}
+                style={{ width: `${width}px` }}
+            >
+                {/* Resize Handle */}
+                <div
+                    className={cn(
+                        'absolute top-0 left-0 z-50 h-full w-1 cursor-col-resize transition-colors hover:bg-blue-500/50',
+                        isResizing && 'bg-blue-500/50',
+                    )}
+                    onPointerDown={handlePointerDown}
+                />
+
                 <div className="flex h-full flex-col">
                     <header className="flex items-center justify-between border-b border-neutral-700 px-4 py-3">
                         <DialogTitle className="text-neutral-100">AI 对话</DialogTitle>
@@ -60,19 +54,6 @@ export const ChatDrawer = ({
                     </header>
 
                     <ChatMessageList messages={messages} isLoading={isLoading} />
-
-                    <ChatComposer
-                        value={inputValue}
-                        onChange={setInputValue}
-                        onSubmit={handleSend}
-                        model={model}
-                        onModelChange={setModel}
-                        personaId={personaId}
-                        onPersonaChange={setPersonaId}
-                        onStop={onStop}
-                        disabled={isLoading ? false : !canSend}
-                        loading={isLoading}
-                    />
                 </div>
             </DialogContent>
         </Dialog>
