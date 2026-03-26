@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
 import {
+    ASPECT_RATIOS,
     IMAGE_MODELS,
     IMAGE_RESOLUTIONS,
     IMAGE_SIZES,
@@ -73,7 +74,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const ratio = currentImageData?.size ?? '1024x1024'
     const resolution = currentImageData?.resolution ?? '2K'
     const model = currentImageData?.model ?? 'doubao-seedream-4-0'
-    const templateId = currentImageData?.templateId ?? STYLE_TEMPLATE_MOCK[0].id
+    const aspectRatio = currentImageData?.aspectRatio ?? '1:1'
     const uploadedUrls = currentImageData?.uploadedUrls ?? []
     const promptDraftHtml = currentImageData?.promptDraftHtml ?? '<p></p>'
 
@@ -498,11 +499,11 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             prompt: mergedPrompt,
             size: ratio,
             resolution,
+            aspectRatio,
             n: 1,
             image_urls: referenceImageUrls,
             promptDraft: editor?.getText() ?? '',
             promptDraftHtml: editor?.getHTML() ?? '<p></p>',
-            templateId,
             uploadedUrls,
             metadata: {
                 resolution,
@@ -625,12 +626,33 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 updateImageNodeData(nodeId, { size: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[140px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择比例" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {IMAGE_SIZES.map((item) => (
-                                    <SelectItem key={item.value} value={item.value}>
+                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
+                                        {item.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-[11px] text-neutral-400">宽高比</label>
+                        <Select
+                            value={aspectRatio}
+                            onValueChange={(value) => {
+                                updateImageNodeData(nodeId, { aspectRatio: value })
+                            }}
+                        >
+                            <SelectTrigger className="h-8 min-w-[100px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                                <SelectValue placeholder="选择宽高比" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
+                                {ASPECT_RATIOS.map((item) => (
+                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.label}
                                     </SelectItem>
                                 ))}
@@ -646,12 +668,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 updateImageNodeData(nodeId, { resolution: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[90px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择分辨率" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {IMAGE_RESOLUTIONS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value}>
+                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.label}
                                     </SelectItem>
                                 ))}
@@ -667,33 +689,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 updateImageNodeData(nodeId, { model: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[180px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {IMAGE_MODELS.map((item) => (
-                                    <SelectItem key={item.id} value={item.model}>
-                                        {item.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">风格模板</label>
-                        <Select
-                            value={templateId}
-                            onValueChange={(value) => {
-                                updateImageNodeData(nodeId, { templateId: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择风格模板" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {STYLE_TEMPLATE_MOCK.map((item) => (
-                                    <SelectItem key={item.id} value={item.id}>
+                                    <SelectItem key={item.id} value={item.model} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.name}
                                     </SelectItem>
                                 ))}
