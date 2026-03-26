@@ -52,8 +52,8 @@ export const ImageNode = memo(({
             />
 
             {/* 顶部工具栏：随视口缩放同步变化 */}
-            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10}>
-                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
+            <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10 * zoom}>
+                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom center' }}>
                     <ImageToolbar nodeId={id} data={data} selected={selected} />
                 </div>
             </NodeToolbar>
@@ -62,7 +62,7 @@ export const ImageNode = memo(({
             <NodeToolbar
                 isVisible={selected && !isDragging}
                 position={Position.Bottom}
-                offset={18}
+                offset={18 * zoom}
             >
                 <div className="nodrag nopan nowheel" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
                     <ImagePromptPanel nodeId={id} />
@@ -70,7 +70,7 @@ export const ImageNode = memo(({
             </NodeToolbar>
 
             <div
-                className="relative flex w-87.5 min-h-62.5 flex-col gap-2 rounded-xl border bg-card p-2 shadow-sm transition-transform duration-200 ease-in-out"
+                className="relative flex w-87.5 min-h-62.5 flex-col gap-2 rounded-xl border bg-card  shadow-sm transition-transform duration-200 ease-in-out"
             >
                 {/* 图片内容区：提供明确高度基准，避免 h-full + absolute 链路在自适应场景下塌陷 */}
                 <div className="relative flex w-full min-h-62.5 aspect-7/5 overflow-hidden rounded-md bg-muted/10">

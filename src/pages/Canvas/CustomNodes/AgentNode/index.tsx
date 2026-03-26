@@ -49,7 +49,7 @@ export const AgentNode = memo(({ id, data, selected }: NodeProps<AgentNodeType>)
             />
 
             <div
-                className="relative flex h-48 w-48 items-center justify-center rounded-xl border bg-card p-3 shadow-sm transition-transform duration-200 ease-in-out"
+                className="relative flex h-48 w-48 items-center justify-center rounded-xl border bg-card  shadow-sm transition-transform duration-200 ease-in-out"
             >
                 <span className="absolute left-2 top-2 max-w-40 truncate rounded-md border bg-muted px-2 py-0.5 text-[11px] leading-4 text-muted-foreground">
                     {presetLabel}

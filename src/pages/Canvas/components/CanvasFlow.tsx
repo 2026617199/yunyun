@@ -9,11 +9,13 @@ import {
     useReactFlow,
     ControlButton,
 } from '@xyflow/react'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Upload } from 'lucide-react'
+import { useDropzone } from 'react-dropzone'
 
 import { nodeTypes } from '../constants/canvasConfig'
 import { CanvasContextMenu, type CanvasNodeType } from './CanvasContextMenu'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
+import { uploadImage } from '@/api/ai'
 import type { AllNodeType, EdgeType } from '@/types/flow'
 
 type CanvasFlowProps = {
@@ -138,9 +140,69 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
         [addNode, menuScreenPosition, onConnect, screenToFlowPosition]
     )
 
+    // ==================== 图片拖拽上传逻辑 ====================
+
+    const updateImageNodeData = useCanvasFlowStore((state) => state.updateImageNodeData)
+
+    // 处理图片文件上传并创建节点
+    const handleImageDrop = useCallback(
+        async (files: File[], dropPosition: { x: number; y: number }) => {
+            const flowPosition = screenToFlowPosition(dropPosition)
+
+            for (const file of files) {
+                const newNodeId = addNode('image', flowPosition)
+
+                // 偏移后续节点位置，避免重叠
+                flowPosition.x += 40
+                flowPosition.y += 40
+
+                // 创建 FormData 上传
+                const formData = new FormData()
+                formData.append('file', file)
+
+                try {
+                    const response: any = await uploadImage(formData)
+                    const imageUrl = response?.url || response?.data?.url
+
+                    if (imageUrl) {
+                        updateImageNodeData(newNodeId, {
+                            result: {
+                                type: 'image',
+                                data: [{ url: imageUrl }],
+                            },
+                        })
+                    }
+                } catch (error) {
+                    console.error('图片上传失败:', error)
+                }
+            }
+        },
+        [addNode, screenToFlowPosition, updateImageNodeData]
+    )
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        accept: { 'image/*': [] },
+        noClick: true,
+        noKeyboard: true,
+        onDrop: (acceptedFiles, _rejectedFiles, event) => {
+            const dropEvent = event as unknown as DragEvent
+            if (dropEvent && 'clientX' in dropEvent && 'clientY' in dropEvent) {
+                handleImageDrop(acceptedFiles, {
+                    x: dropEvent.clientX,
+                    y: dropEvent.clientY,
+                })
+            }
+        },
+    })
+
     return (
         <CanvasContextMenu onCreateNode={handleCreateNodeFromMenu}>
-            <div ref={contextMenuTriggerRef} className="h-full w-full">
+            <div
+                {...getRootProps()}
+                ref={contextMenuTriggerRef}
+                className="h-full w-full relative"
+            >
+                <input {...getInputProps()} />
                 <ReactFlow<AllNodeType, EdgeType>
                     nodes={nodes}
                     edges={edges}
@@ -156,6 +218,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                     minZoom={0.2}
                     maxZoom={2}
                     colorMode='dark'
+                    deleteKeyCode={['Backspace', 'Delete']}
                 >
                     <Background />
                     <Controls>
@@ -167,6 +230,16 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                         <MiniMap pannable zoomable position="bottom-left" style={{ left: '48px' }} />
                     ) : null}
                 </ReactFlow>
+
+                {/* 拖拽覆盖层 */}
+                {isDragActive && (
+                    <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
+                        <div className="flex flex-col items-center gap-2 text-primary">
+                            <Upload className="size-12" />
+                            <span className="text-lg font-medium">释放图片到画布</span>
+                        </div>
+                    </div>
+                )}
             </div>
         </CanvasContextMenu>
     )
