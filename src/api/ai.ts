@@ -63,7 +63,8 @@ export async function createChatCompletion(data: any, signal?: AbortSignal) {
       signal,
       headers: {
         Accept: 'text/event-stream',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer sk-8ngj8WD671ZFioHc2qypEJFQwhWeims435RtteF28IPxgHWR'
       },
       body: JSON.stringify(data),
     })
