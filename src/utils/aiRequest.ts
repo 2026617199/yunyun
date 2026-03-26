@@ -1,25 +1,17 @@
 import axios, { AxiosRequestConfig } from 'axios'
 
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
+const AI_TOKEN = import.meta.env.VITE_AI_TOKEN || ''
+
 const aiService = axios.create({
-  // 同源代理前缀：由 vite proxy 转发到真实 AI 服务并注入 Authorization
-  baseURL: '/ai-proxy',
+  baseURL: AI_BASE_URL,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
+    ...(AI_TOKEN ? { Authorization: `Bearer ${AI_TOKEN}` } : {}),
   },
   timeout: 300000,
 })
-
-// 请求拦截器
-aiService.interceptors.request.use(
-  // (config) => {
-  //   config.headers.Authorization = `Bearer ${AI_TOKEN}`
-  //   return config
-  // },
-  // (error) => {
-  //   return Promise.reject(error)
-  // }
-)
 
 // 响应拦截器
 aiService.interceptors.response.use(

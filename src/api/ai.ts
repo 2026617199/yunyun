@@ -54,14 +54,18 @@ export function getVideoTaskStatus(id: string) {
 // 兼容 OpenAI 格式的文字对话接口，支持全部文字模型
 // - stream: false 或不传 → 返回完整响应
 // - stream: true → 返回 async generator，逐块 yield 文本内容
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
+const AI_TOKEN = import.meta.env.VITE_AI_TOKEN || ''
+
 export async function createChatCompletion(data: any, signal?: AbortSignal) {
   if (data.stream) {
-    const response = await fetch('/ai-proxy/v1/chat/completions', {
+    const response = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
       method: 'POST',
       signal,
       headers: {
         Accept: 'text/event-stream',
         'Content-Type': 'application/json',
+        ...(AI_TOKEN ? { Authorization: `Bearer ${AI_TOKEN}` } : {}),
       },
       body: JSON.stringify(data),
     })
