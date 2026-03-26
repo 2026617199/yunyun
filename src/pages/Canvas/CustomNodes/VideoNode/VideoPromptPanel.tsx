@@ -504,7 +504,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
     }
 
     return (
-        <div className="nodrag nopan nowheel w-170 rounded-3xl border border-neutral-700 bg-[linear-gradient(160deg,rgba(38,38,38,0.98)_0%,rgba(30,30,30,0.97)_58%,rgba(23,23,23,0.96)_100%)] p-3 shadow-[0_22px_70px_rgba(0,0,0,0.35)] backdrop-blur-md">
+        <div className="nodrag nopan nowheel w-[700px] min-w-[700px] rounded-3xl border border-neutral-700 bg-[linear-gradient(160deg,rgba(38,38,38,0.98)_0%,rgba(30,30,30,0.97)_58%,rgba(23,23,23,0.96)_100%)] p-3 shadow-[0_22px_70px_rgba(0,0,0,0.35)] backdrop-blur-md">
             <div className="relative mb-3 rounded-2xl border border-neutral-700 bg-neutral-800/80 p-2">
                 <EditorContent editor={editor} />
 
@@ -602,12 +602,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 updateVideoNodeData(nodeId, { aspect_ratio: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[140px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择比例" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {VIDEO_ASPECT_RATIOS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value}>
+                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.label}
                                     </SelectItem>
                                 ))}
@@ -628,12 +628,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[120px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择尺寸" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {VIDEO_SIZE_OPTIONS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value}>
+                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.label}
                                     </SelectItem>
                                 ))}
@@ -649,12 +649,12 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 updateVideoNodeData(nodeId, { model: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[180px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-neutral-800 border border-neutral-600">
                                 {VIDEO_MODELS.map((item) => (
-                                    <SelectItem key={item.id} value={item.model}>
+                                    <SelectItem key={item.id} value={item.model} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
                                         {item.name}
                                     </SelectItem>
                                 ))}
@@ -677,29 +677,8 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 }
                                 updateVideoNodeData(nodeId, { duration: next })
                             }}
-                            className="h-8 w-26 rounded-md border border-neutral-700 bg-neutral-900 px-2 text-xs text-neutral-100 outline-none focus:border-neutral-500"
+                            className="h-8 w-26 min-w-[100px] rounded-md border border-neutral-700 bg-neutral-900 px-2 text-xs text-neutral-100 outline-none focus:border-neutral-500"
                         />
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">风格模板</label>
-                        <Select
-                            value={templateId}
-                            onValueChange={(value) => {
-                                updateVideoNodeData(nodeId, { templateId: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 w-full border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择风格模板" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {STYLE_TEMPLATE_MOCK.map((item) => (
-                                    <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                     </div>
 
                     <div className="ml-auto">
