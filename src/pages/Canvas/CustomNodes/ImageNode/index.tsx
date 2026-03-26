@@ -2,6 +2,7 @@ import { NodeToolbar, Position, type NodeProps } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
+import { useNodeScale } from '@/hooks/useNodeScale'
 import type { ImageNodeType } from '@/types/flow'
 
 import { ImageContent } from './ImageContent'
@@ -23,6 +24,7 @@ export const ImageNode = memo(({
     dragging
 }: NodeProps<ImageNodeType>) => {
     const isDragging = Boolean(dragging)
+    const { zoom } = useNodeScale()
     const handleVisibilityClass = selected
         ? 'visible opacity-100'
         : 'invisible opacity-0 group-hover/node:visible group-hover/node:opacity-100'
@@ -49,18 +51,20 @@ export const ImageNode = memo(({
                 className={`transition-opacity duration-150 ${handleVisibilityClass}`}
             />
 
-            {/* 顶部工具栏：固定偏移，避免订阅 viewport 带来的高频重渲染 */}
+            {/* 顶部工具栏：随视口缩放同步变化 */}
             <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10}>
-                <ImageToolbar data={data} selected={selected} />
+                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
+                    <ImageToolbar data={data} selected={selected} />
+                </div>
             </NodeToolbar>
 
-            {/* 底部增强输入区：固定在节点下方 */}
+            {/* 底部增强输入区：随视口缩放同步变化 */}
             <NodeToolbar
                 isVisible={selected && !isDragging}
                 position={Position.Bottom}
                 offset={18}
             >
-                <div className="nodrag nopan nowheel">
+                <div className="nodrag nopan nowheel" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
                     <ImagePromptPanel nodeId={id} />
                 </div>
             </NodeToolbar>
