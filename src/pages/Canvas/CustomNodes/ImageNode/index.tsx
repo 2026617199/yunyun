@@ -54,7 +54,7 @@ export const ImageNode = memo(({
             {/* 顶部工具栏：随视口缩放同步变化 */}
             <NodeToolbar isVisible={selected && !isDragging} position={Position.Top} offset={10}>
                 <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-                    <ImageToolbar data={data} selected={selected} />
+                    <ImageToolbar nodeId={id} data={data} selected={selected} />
                 </div>
             </NodeToolbar>
 

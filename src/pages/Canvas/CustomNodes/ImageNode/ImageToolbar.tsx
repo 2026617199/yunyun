@@ -1,14 +1,15 @@
 
 import {
     IconAspectRatio,
-    IconBrush,
     IconCrop,
     IconDownload,
     IconEraser,
     IconSparkles,
+    IconUpload,
     IconZoomIn,
 } from '@tabler/icons-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import Lightbox from 'yet-another-react-lightbox'
 // import Captions from 'yet-another-react-lightbox/plugins/captions'
 import Download from 'yet-another-react-lightbox/plugins/download'
@@ -19,24 +20,34 @@ import Slideshow from 'yet-another-react-lightbox/plugins/slideshow'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import { toast } from 'sonner'
 
+import { uploadImage } from '@/api/ai'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageGenerationNode } from '@/types/flow'
 
 type ImageToolbarProps = {
+    nodeId: string
     data: ImageGenerationNode
     selected: boolean
 }
 
-type ActionKey = 'repaint' | 'erase' | 'enhance' | 'outpaint' | 'crop' | 'download' | 'preview'
+type ActionKey = 'upload' | 'erase' | 'enhance' | 'outpaint' | 'crop' | 'download' | 'preview'
 
 /**
  * 图片节点工具栏组件
  * 职责：
- * - 提供重绘,擦除，增强，扩图，裁剪，下载,全屏查看的操作按钮
+ * - 提供上传,擦除，增强，扩图，裁剪，下载,全屏查看的操作按钮
  * - 处理工具栏按钮交互反馈
  * - 基于 yet-another-react-lightbox 提供放大查看能力
  */
-export const ImageToolbar = ({ data, selected }: ImageToolbarProps) => {
+export const ImageToolbar = ({ nodeId, data, selected }: ImageToolbarProps) => {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+
+    // 隐藏的文件输入框引用
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+    // 更新节点数据
+    const updateImageNodeData = useCanvasFlowStore((state) => state.updateImageNodeData)
 
     // 获取所有图片 URL 数组
     const imageUrls = data.result?.data?.map((item) => item.url) ?? []
@@ -44,7 +55,7 @@ export const ImageToolbar = ({ data, selected }: ImageToolbarProps) => {
 
     const toolbarActions = useMemo(() => {
         return [
-            { key: 'repaint' as const, label: '重绘', icon: IconBrush },
+            { key: 'upload' as const, label: '上传', icon: IconUpload },
             { key: 'erase' as const, label: '擦除', icon: IconEraser },
             { key: 'enhance' as const, label: '增强', icon: IconSparkles },
             { key: 'outpaint' as const, label: '扩图', icon: IconAspectRatio },
@@ -54,7 +65,60 @@ export const ImageToolbar = ({ data, selected }: ImageToolbarProps) => {
         ]
     }, [])
 
+    // 触发文件选择
+    const handleUploadClick = () => {
+        if (isUploading) {
+            return
+        }
+        fileInputRef.current?.click()
+    }
+
+    // 处理文件上传
+    const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) {
+            return
+        }
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('purpose', 'generation')
+
+        setIsUploading(true)
+
+        try {
+            const response = await uploadImage(formData)
+            const uploadedUrl = response?.data?.url
+
+            if (!uploadedUrl) {
+                toast.warning('上传成功但未返回图片地址')
+                return
+            }
+
+            // 将新图片追加到 result.data 数组
+            const currentData = data.result?.data ?? []
+            updateImageNodeData(nodeId, {
+                result: {
+                    type: 'image',
+                    data: [...currentData, { url: uploadedUrl }],
+                },
+            })
+            toast.success('上传成功')
+        } catch (uploadError) {
+            console.error('上传图片失败:', uploadError)
+            toast.error('上传失败，请重试')
+        } finally {
+            setIsUploading(false)
+            event.target.value = ''
+        }
+    }
+
     const handleAction = (actionKey: ActionKey) => {
+        if (actionKey === 'upload') {
+            handleUploadClick()
+            return
+        }
+
         if (actionKey === 'preview') {
             if (!currentImageUrl) {
                 toast.info('暂无可预览图片')
@@ -72,6 +136,15 @@ export const ImageToolbar = ({ data, selected }: ImageToolbarProps) => {
 
     return (
         <>
+            {/* 隐藏的文件输入框 */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+            />
+
             <div
                 className={`nodrag nopan nowheel inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-800/95 px-2 shadow-md ${selected ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             >
