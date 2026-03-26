@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { ReactFlowProvider } from '@xyflow/react'
 
 import { CanvasFlow } from './components/CanvasFlow'
@@ -10,13 +11,15 @@ import { useCanvasChat } from '@/hooks/useCanvasChat'
 
 // 外部组件 - 提供 ReactFlowProvider 和工具栏
 const CanvasPage = () => {
+    // 从路由参数获取项目 ID
+    const { projectId } = useParams<{ projectId: string }>()
     const [isChatOpen, setIsChatOpen] = useState(false)
     const { messages, isLoading, sendMessage, stopMessage } = useCanvasChat()
 
     return (
         <ReactFlowProvider>
             <div className="h-screen w-screen">
-                <CanvasFlow />
+                <CanvasFlow projectId={projectId} />
 
                 {/* 悬浮侧边栏：与 CanvasFlow 同级，避免节点移动时不必要重渲染。 */}
                 <CanvasSidebar />

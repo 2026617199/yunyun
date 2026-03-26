@@ -16,23 +16,30 @@ import { CanvasContextMenu, type CanvasNodeType } from './CanvasContextMenu'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { AllNodeType, EdgeType } from '@/types/flow'
 
+type CanvasFlowProps = {
+    projectId: string | undefined
+}
+
 // 画布流组件：仅负责 ReactFlow 相关状态与渲染。
-export const CanvasFlow = () => {
+export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
     // 通过 zustand 读取图状态，避免业务动作散落在多个组件。
     const nodes = useCanvasFlowStore((state) => state.nodes)
     const edges = useCanvasFlowStore((state) => state.edges)
     const hydrated = useCanvasFlowStore((state) => state.hydrated)
+    const currentProjectId = useCanvasFlowStore((state) => state.projectId)
     const onNodesChange = useCanvasFlowStore((state) => state.onNodesChange)
     const onEdgesChange = useCanvasFlowStore((state) => state.onEdgesChange)
     const onConnect = useCanvasFlowStore((state) => state.onConnect)
     const addNode = useCanvasFlowStore((state) => state.addNode)
-    const hydrateGraph = useCanvasFlowStore((state) => state.hydrateGraph)
+    const switchProject = useCanvasFlowStore((state) => state.switchProject)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
 
-    // 页面加载时恢复数据
+    // 当 projectId 变化时切换项目
     useEffect(() => {
-        hydrateGraph()
-    }, [hydrateGraph])
+        if (projectId && projectId !== currentProjectId) {
+            switchProject(projectId)
+        }
+    }, [projectId, currentProjectId, switchProject])
 
     const contextMenuTriggerRef = useRef<HTMLDivElement | null>(null)
     const [menuScreenPosition, setMenuScreenPosition] = useState({ x: 0, y: 0 })

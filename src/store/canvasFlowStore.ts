@@ -12,10 +12,10 @@ import { createImageGeneration, createVideoGeneration, getImageTaskStatus, getVi
 import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-presets'
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
+import { getCanvasDataKey } from '@/utils/projectStorage'
 
 // ==================== 持久化配置 ====================
 
-const CANVAS_STORAGE_KEY = 'canvas-flow-data'
 const CANVAS_STORAGE_VERSION = 1
 
 type CanvasPersistedState = {
@@ -57,6 +57,8 @@ type CanvasFlowState = {
   nodeIdCounters: { note: number; image: number; video: number; agent: number }
   // 是否已完成数据恢复
   hydrated: boolean
+  // 当前项目 ID
+  projectId: string | null
 
   // === 基础流程事件 ===
   onNodesChange: (changes: NodeChange<AllNodeType>[]) => void
@@ -64,12 +66,16 @@ type CanvasFlowState = {
   onConnect: (connection: Connection) => void
 
   // === 持久化操作 ===
+  /** 切换项目（加载项目数据） */
+  switchProject: (projectId: string) => void
   /** 保存当前图状态到 localStorage */
   saveGraph: () => void
   /** 从 localStorage 恢复图状态 */
-  hydrateGraph: () => void
+  hydrateGraph: (projectId: string) => void
   /** 重置到上次保存的状态 */
   resetToSavedGraph: () => void
+  /** 画布状态（用于切换项目前） */
+  clearCanvas: () => void
 
   // === 通用节点操作 ===
   /** 获取下一个指定类型的节点 ID（自增） */
@@ -391,14 +397,80 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   edges: [],
   nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
   hydrated: false,
+  projectId: null,
 
   // ==================== 持久化方法实现 ====================
+
+  /**
+   * 切换项目（加载项目数据）
+   */
+  switchProject: (projectId: string) => {
+    const currentProjectId = get().projectId
+    // 如果是同一个项目，不需要重新加载
+    if (currentProjectId === projectId && get().hydrated) {
+      return
+    }
+    
+    // 停止所有轮询
+    imagePollingControllers.forEach((_, nodeId) => {
+      stopImagePollingInternal(nodeId)
+    })
+    videoPollingControllers.forEach((_, nodeId) => {
+      stopVideoPollingInternal(nodeId)
+    })
+    
+    // 加载新项目数据
+    const storageKey = getCanvasDataKey(projectId)
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (!raw) {
+        set({
+          projectId,
+          nodes: [],
+          edges: [],
+          nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
+          hydrated: true,
+        })
+        return
+      }
+
+      const data = JSON.parse(raw) as CanvasPersistedState
+      if (data.version !== CANVAS_STORAGE_VERSION) {
+        set({
+          projectId,
+          nodes: [],
+          edges: [],
+          nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
+          hydrated: true,
+        })
+        return
+      }
+
+      set({
+        projectId,
+        nodes: data.nodes,
+        edges: data.edges,
+        nodeIdCounters: data.nodeIdCounters,
+        hydrated: true,
+      })
+    } catch {
+      set({
+        projectId,
+        nodes: [],
+        edges: [],
+        nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
+        hydrated: true,
+      })
+    }
+  },
 
   /**
    * 保存当前图状态到 localStorage
    */
   saveGraph: () => {
     const state = get()
+    if (!state.projectId) return
+    
     const data: CanvasPersistedState = {
       version: CANVAS_STORAGE_VERSION,
       savedAt: Date.now(),
@@ -406,45 +478,29 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
       edges: state.edges,
       nodeIdCounters: state.nodeIdCounters,
     }
-    localStorage.setItem(CANVAS_STORAGE_KEY, JSON.stringify(data))
+    const storageKey = getCanvasDataKey(state.projectId)
+    localStorage.setItem(storageKey, JSON.stringify(data))
   },
 
   /**
    * 从 localStorage 恢复图状态
    */
-  hydrateGraph: () => {
+  hydrateGraph: (projectId: string) => {
     if (get().hydrated) return
-
-    try {
-      const raw = localStorage.getItem(CANVAS_STORAGE_KEY)
-      if (!raw) {
-        set({ hydrated: true })
-        return
-      }
-
-      const data = JSON.parse(raw) as CanvasPersistedState
-      if (data.version !== CANVAS_STORAGE_VERSION) {
-        set({ hydrated: true })
-        return
-      }
-
-      set({
-        nodes: data.nodes,
-        edges: data.edges,
-        nodeIdCounters: data.nodeIdCounters,
-        hydrated: true,
-      })
-    } catch {
-      set({ hydrated: true })
-    }
+    
+    get().switchProject(projectId)
   },
 
   /**
    * 重置到上次保存的状态
    */
   resetToSavedGraph: () => {
+    const state = get()
+    if (!state.projectId) return
+    
     try {
-      const raw = localStorage.getItem(CANVAS_STORAGE_KEY)
+      const storageKey = getCanvasDataKey(state.projectId)
+      const raw = localStorage.getItem(storageKey)
       if (!raw) {
         set({ nodes: [], edges: [] })
         return
@@ -464,6 +520,27 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     } catch {
       set({ nodes: [], edges: [] })
     }
+  },
+
+  /**
+   * 清空当前画布状态（用于切换项目前）
+   */
+  clearCanvas: () => {
+    // 停止所有轮询
+    imagePollingControllers.forEach((_, nodeId) => {
+      stopImagePollingInternal(nodeId)
+    })
+    videoPollingControllers.forEach((_, nodeId) => {
+      stopVideoPollingInternal(nodeId)
+    })
+    
+    set({
+      nodes: [],
+      edges: [],
+      nodeIdCounters: { note: 1, image: 1, video: 1, agent: 1 },
+      hydrated: false,
+      projectId: null,
+    })
   },
 
   // ==================== 通用方法实现 ====================
