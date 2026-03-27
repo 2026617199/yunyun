@@ -5,11 +5,7 @@ import { IconUpload } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
-import {
-    VIDEO_ASPECT_RATIOS,
-    VIDEO_DURATION_CONFIG,
-    VIDEO_MODELS,
-} from '@/constants/ai-models'
+import { VIDEO_MODELS } from '@/constants/ai-models'
 import {
     Select,
     SelectContent,
@@ -26,12 +22,7 @@ import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageGenerationNode, NoteNodeData, VideoGenerationNode } from '@/types/flow'
 
 import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from '../ImageNode/mock'
-
-const VIDEO_SIZE_OPTIONS = [
-    { label: '1280×720', value: '1280x720' },
-    { label: '720×1280', value: '720x1280' },
-    { label: '1024×1024', value: '1024x1024' },
-] as const
+import { VideoIntegratedParamsPanel } from './components/VideoIntegratedParamsPanel'
 
 export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
     const [isUploading, setIsUploading] = useState(false)
@@ -592,64 +583,35 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                 )}
             </div>
 
+            {/* 下方区域：参数控制区 */}
             <div className="rounded-2xl border border-neutral-700 bg-neutral-800/80 p-2.5">
-                <div className="flex items-end gap-2">
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">画面比例</label>
-                        <Select
-                            value={aspectRatio}
-                            onValueChange={(value) => {
-                                updateVideoNodeData(nodeId, { aspect_ratio: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 min-w-[140px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择比例" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border border-neutral-600">
-                                {VIDEO_ASPECT_RATIOS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
-                                        {item.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="flex items-center gap-2">
+                    {/* 整合参数面板 */}
+                    <VideoIntegratedParamsPanel
+                        aspectRatio={aspectRatio}
+                        videoSize={videoSize}
+                        duration={duration}
+                        onAspectRatioChange={(value) => updateVideoNodeData(nodeId, { aspect_ratio: value })}
+                        onVideoSizeChange={(value) => {
+                            updateVideoNodeData(nodeId, {
+                                metadata: {
+                                    ...(currentVideoData?.metadata ?? {}),
+                                    size: value,
+                                },
+                            })
+                        }}
+                        onDurationChange={(value) => updateVideoNodeData(nodeId, { duration: value })}
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">视频尺寸</label>
-                        <Select
-                            value={videoSize}
-                            onValueChange={(value) => {
-                                updateVideoNodeData(nodeId, {
-                                    metadata: {
-                                        ...(currentVideoData?.metadata ?? {}),
-                                        size: value,
-                                    },
-                                })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 min-w-[120px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择尺寸" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border border-neutral-600">
-                                {VIDEO_SIZE_OPTIONS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
-                                        {item.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">生成模型</label>
+                    {/* 生成模型 */}
+                    <div className="flex items-center gap-2">
                         <Select
                             value={model}
                             onValueChange={(value) => {
                                 updateVideoNodeData(nodeId, { model: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 min-w-[180px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[160px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
                             <SelectContent className="bg-neutral-800 border border-neutral-600">
@@ -660,25 +622,6 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 ))}
                             </SelectContent>
                         </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">视频时长（秒）</label>
-                        <input
-                            type="number"
-                            min={VIDEO_DURATION_CONFIG.min}
-                            max={VIDEO_DURATION_CONFIG.max}
-                            step={VIDEO_DURATION_CONFIG.step}
-                            value={duration}
-                            onChange={(event) => {
-                                const next = Number(event.target.value)
-                                if (Number.isNaN(next)) {
-                                    return
-                                }
-                                updateVideoNodeData(nodeId, { duration: next })
-                            }}
-                            className="h-8 w-26 min-w-[100px] rounded-md border border-neutral-700 bg-neutral-900 px-2 text-xs text-neutral-100 outline-none focus:border-neutral-500"
-                        />
                     </div>
 
                     <div className="ml-auto">
