@@ -9,6 +9,7 @@ import {
 import { create } from 'zustand'
 
 import { createImageGeneration, createVideoGeneration, getImageTaskStatus, getVideoTaskStatus } from '@/api/ai'
+import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-presets'
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
@@ -658,6 +659,11 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
       nodes: [...state.nodes, newNode],
     }))
 
+    // 自动保存
+    if (useChatSettingsStore.getState().autoSaveEnabled) {
+      get().saveGraph()
+    }
+
     return nextId
   },
 
@@ -814,6 +820,11 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
     }))
+
+    // 自动保存
+    if (useChatSettingsStore.getState().autoSaveEnabled) {
+      get().saveGraph()
+    }
   },
 
   /**
