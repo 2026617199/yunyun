@@ -77,6 +77,12 @@ type CanvasFlowState = {
   /** 画布状态（用于切换项目前） */
   clearCanvas: () => void
 
+  // === 导入导出操作 ===
+  /** 导出画布数据 */
+  exportCanvasData: () => CanvasPersistedState
+  /** 导入画布数据 */
+  importCanvasData: (data: CanvasPersistedState) => void
+
   // === 通用节点操作 ===
   /** 获取下一个指定类型的节点 ID（自增） */
   getNextNodeId: (nodeType: NodeType) => string
@@ -964,6 +970,33 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    */
   stopVideoPolling: (nodeId) => {
     stopVideoPollingInternal(nodeId)
+  },
+
+  // ==================== 导入导出方法实现 ====================
+
+  /**
+   * 导出画布数据
+   */
+  exportCanvasData: () => {
+    const state = get()
+    return {
+      version: CANVAS_STORAGE_VERSION,
+      savedAt: Date.now(),
+      nodes: state.nodes,
+      edges: state.edges,
+      nodeIdCounters: state.nodeIdCounters,
+    }
+  },
+
+  /**
+   * 导入画布数据（覆盖模式）
+   */
+  importCanvasData: (data) => {
+    set({
+      nodes: data.nodes,
+      edges: data.edges,
+      nodeIdCounters: data.nodeIdCounters,
+    })
   },
 
   // ==================== 流程事件处理 ====================

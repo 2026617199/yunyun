@@ -1,12 +1,15 @@
-import { IconBolt, IconDeviceFloppy, IconInfoCircle, IconRestore, IconX } from '@tabler/icons-react'
-import { useMemo, useState } from 'react'
+import { IconBolt, IconDownload, IconInfoCircle, IconRestore, IconUpload, IconX } from '@tabler/icons-react'
+import { useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Modal, ModalContent, ModalDescription, ModalTitle } from '@/components/ui/modal'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CANVAS_CHAT_MODELS } from '@/constants/ai-models'
 import { CANVAS_CHAT_PERSONAS, NO_CHAT_PERSONA_ID } from '@/constants/chat-personas'
 import { useChatSettingsStore } from '@/store/chatSettingsStore'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
+import useMessage from '@/hooks/useMessage'
 import { cn } from '@/utils/utils'
 
 type SettingsModalProps = {
@@ -78,6 +81,14 @@ const sectionIdSet = new Set(settingSections.map((item) => item.id))
 export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     const [activeSection, setActiveSection] = useState(settingSections[0].id)
     const { defaultModel, defaultPersonaId, setDefaultModel, setDefaultPersonaId, resetToDefault } = useChatSettingsStore()
+    const { success, error } = useMessage()
+    const exportCanvasData = useCanvasFlowStore((state) => state.exportCanvasData)
+    const importCanvasData = useCanvasFlowStore((state) => state.importCanvasData)
+
+    // 导入确认弹窗状态
+    const [importConfirmOpen, setImportConfirmOpen] = useState(false)
+    const [pendingImportData, setPendingImportData] = useState<any>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const currentSectionItems = useMemo(() => {
         if (!sectionIdSet.has(activeSection)) {
@@ -87,7 +98,56 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
         return sectionPlaceholderMap[activeSection as keyof typeof sectionPlaceholderMap] ?? []
     }, [activeSection])
 
+    // 导出画布数据
+    const handleExport = () => {
+        const data = exportCanvasData()
+        const json = JSON.stringify(data, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `canvas-${Date.now()}.json`
+        link.click()
+        URL.revokeObjectURL(url)
+        success('导出成功')
+    }
+
+    // 触发文件选择
+    const handleImportClick = () => {
+        fileInputRef.current?.click()
+    }
+
+    // 读取文件并弹出确认框
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target?.result as string)
+                setPendingImportData(data)
+                setImportConfirmOpen(true)
+            } catch {
+                error('JSON 文件格式错误')
+            }
+        }
+        reader.readAsText(file)
+        event.target.value = ''
+    }
+
+    // 确认导入
+    const handleConfirmImport = () => {
+        if (pendingImportData) {
+            importCanvasData(pendingImportData)
+            success('导入成功')
+        }
+        setImportConfirmOpen(false)
+        setPendingImportData(null)
+    }
+
     return (
+        <>
         <Modal open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
             <ModalContent aria-label="设置弹窗">
                 <div className="flex h-[min(76vh,720px)] flex-col">
@@ -167,6 +227,30 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                                     </>
                                 )}
 
+                                {/* 数据与版本 - 导入导出 */}
+                                {activeSection === 'data' && (
+                                    <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                        <div className="mb-2 text-sm font-medium text-slate-800">画布数据</div>
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="blue" onClick={handleExport}>
+                                                <IconDownload size={14} />
+                                                导出
+                                            </Button>
+                                            <Button size="sm" onClick={handleImportClick}>
+                                                <IconUpload size={14} />
+                                                导入
+                                            </Button>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept=".json"
+                                                className="hidden"
+                                                onChange={handleFileChange}
+                                            />
+                                        </div>
+                                    </section>
+                                )}
+
                                 {currentSectionItems.map((item) => (
                                     <section key={item.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                                         <div className="mb-2 text-sm font-medium text-slate-800">{item.label}</div>
@@ -221,7 +305,6 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                                 取消
                             </Button>
                             <Button size="sm" variant="blue" onClick={onClose}>
-                                <IconDeviceFloppy size={14} />
                                 保存
                             </Button>
                         </div>
@@ -229,5 +312,22 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 </div>
             </ModalContent>
         </Modal>
+
+        {/* 导入确认弹窗 */}
+        <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>确认导入</DialogTitle>
+                    <DialogDescription>
+                        导入将覆盖当前画布的所有内容，此操作不可撤销。是否继续？
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button size="sm" onClick={() => setImportConfirmOpen(false)}>取消</Button>
+                    <Button size="sm" variant="blue" onClick={handleConfirmImport}>确认导入</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     )
 }
