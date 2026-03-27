@@ -5,12 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
-import {
-    ASPECT_RATIOS,
-    IMAGE_MODELS,
-    IMAGE_RESOLUTIONS,
-    IMAGE_SIZES,
-} from '@/constants/ai-models'
+import { IMAGE_MODELS } from '@/constants/ai-models'
 import {
     Select,
     SelectContent,
@@ -27,6 +22,7 @@ import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageGenerationNode, NoteNodeData } from '@/types/flow'
 
 import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from './mock'
+import { IntegratedParamsPanel } from './components/IntegratedParamsPanel'
 
 /**
  * 图片节点底部增强输入区
@@ -617,79 +613,27 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
             {/* 下方区域：参数控制区 */}
             <div className="rounded-2xl border border-neutral-700 bg-neutral-800/80 p-2.5">
-                <div className="flex items-end gap-2">
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">画面比例</label>
-                        <Select
-                            value={ratio}
-                            onValueChange={(value) => {
-                                updateImageNodeData(nodeId, { size: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 min-w-[140px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择比例" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border border-neutral-600">
-                                {IMAGE_SIZES.map((item) => (
-                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
-                                        {item.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="flex items-center gap-2">
+                    {/* 整合参数面板 */}
+                    <IntegratedParamsPanel
+                        size={ratio}
+                        aspectRatio={aspectRatio}
+                        resolution={resolution}
+                        onSizeChange={(value) => updateImageNodeData(nodeId, { size: value })}
+                        onAspectRatioChange={(value) => updateImageNodeData(nodeId, { aspectRatio: value })}
+                        onResolutionChange={(value) => updateImageNodeData(nodeId, { resolution: value })}
+                    />
 
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">宽高比</label>
-                        <Select
-                            value={aspectRatio}
-                            onValueChange={(value) => {
-                                updateImageNodeData(nodeId, { aspectRatio: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 min-w-[100px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择宽高比" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border border-neutral-600">
-                                {ASPECT_RATIOS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
-                                        {item.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {/* 生成模型 */}
+                    <div className="flex items-center gap-2">
 
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">分辨率</label>
-                        <Select
-                            value={resolution}
-                            onValueChange={(value) => {
-                                updateImageNodeData(nodeId, { resolution: value })
-                            }}
-                        >
-                            <SelectTrigger className="h-8 min-w-[90px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
-                                <SelectValue placeholder="选择分辨率" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-neutral-800 border border-neutral-600">
-                                {IMAGE_RESOLUTIONS.map((item) => (
-                                    <SelectItem key={item.value} value={item.value} className="text-neutral-100 focus:bg-neutral-700 focus:text-neutral-100">
-                                        {item.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[11px] text-neutral-400">生成模型</label>
                         <Select
                             value={model}
                             onValueChange={(value) => {
                                 updateImageNodeData(nodeId, { model: value })
                             }}
                         >
-                            <SelectTrigger className="h-8 min-w-[180px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
+                            <SelectTrigger className="h-8 min-w-[160px] border-neutral-700 bg-neutral-900 text-xs text-neutral-100">
                                 <SelectValue placeholder="选择模型" />
                             </SelectTrigger>
                             <SelectContent className="bg-neutral-800 border border-neutral-600">
