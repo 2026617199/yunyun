@@ -509,9 +509,9 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                 <EditorContent editor={editor} />
 
                 <div className="nodrag nopan nowheel mt-2.5 flex gap-2 overflow-x-auto pb-1">
-                    <button
-                        type="button"
-                        className="group nodrag nopan nowheel relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-dashed border-neutral-600 bg-neutral-800/90 text-neutral-300 transition-colors hover:border-neutral-400 hover:text-neutral-100"
+                    <Button
+                        unstyled
+                        className="nodrag nopan nowheel h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-dashed border-neutral-600 bg-neutral-800/90 text-neutral-300 transition-colors hover:border-neutral-400 hover:text-neutral-100"
                         onClick={handleUploadClick}
                         title={isUploading ? '上传中...' : '上传参考图'}
                         disabled={isUploading}
@@ -520,7 +520,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                             <IconUpload size={16} />
                             {isUploading ? '上传中' : '上传'}
                         </div>
-                    </button>
+                    </Button>
 
                     <input
                         ref={fileInputRef}
@@ -531,10 +531,10 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                     />
 
                     {referenceImageUrls.map((url, index) => (
-                        <button
+                        <Button
                             key={`${url}-${index}`}
-                            type="button"
-                            className="group nodrag nopan nowheel relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-700 bg-neutral-800"
+                            unstyled
+                            className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-neutral-700 bg-neutral-800"
                             title="参考图"
                         >
                             <img
@@ -543,7 +543,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                                 loading="lazy"
                             />
-                        </button>
+                        </Button>
                     ))}
                 </div>
 
@@ -554,9 +554,9 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                             const token = activeMode === 'mention' ? `@${item.value}` : item.command
 
                             return (
-                                <button
+                                <Button
                                     key={item.id}
-                                    type="button"
+                                    unstyled
                                     className={cn(
                                         'flex w-full items-start justify-between gap-3 border-b border-neutral-800 px-3 py-2 text-left last:border-b-0',
                                         isActive ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-200 hover:bg-neutral-800',
@@ -585,7 +585,7 @@ export const VideoPromptPanel = ({ nodeId }: { nodeId: string }) => {
                                     <span className="rounded-md border border-neutral-700 bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-300">
                                         {token}
                                     </span>
-                                </button>
+                                </Button>
                             )
                         })}
                     </div>
