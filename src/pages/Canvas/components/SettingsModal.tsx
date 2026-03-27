@@ -63,7 +63,7 @@ const sectionIdSet = new Set(settingSections.map((item) => item.id))
 
 export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     const [activeSection, setActiveSection] = useState(settingSections[0].id)
-    const { defaultModel, defaultPersonaId, autoSaveEnabled, gridVisible, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, setGridVisible, resetToDefault } = useChatSettingsStore()
+    const { defaultModel, defaultPersonaId, autoSaveEnabled, gridVisible, nodeSearchVisible, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, setGridVisible, setNodeSearchVisible, resetToDefault } = useChatSettingsStore()
     const { success, error } = useMessage()
     const exportCanvasData = useCanvasFlowStore((state) => state.exportCanvasData)
     const importCanvasData = useCanvasFlowStore((state) => state.importCanvasData)
@@ -225,15 +225,26 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
 
                                 {/* 画布设置 - 网格显示开关 */}
                                 {activeSection === 'canvas' && (
-                                    <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <div className="text-sm font-medium text-slate-800">网格显示</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">控制画布背景网格线的显示</div>
+                                    <>
+                                        <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="text-sm font-medium text-slate-800">网格显示</div>
+                                                    <div className="text-xs text-slate-500 mt-0.5">控制画布背景网格线的显示</div>
+                                                </div>
+                                                <Switch checked={gridVisible} onCheckedChange={setGridVisible} />
                                             </div>
-                                            <Switch checked={gridVisible} onCheckedChange={setGridVisible} />
-                                        </div>
-                                    </section>
+                                        </section>
+                                        <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="text-sm font-medium text-slate-800">节点搜索栏显示</div>
+                                                    <div className="text-xs text-slate-500 mt-0.5">控制画布右上角节点搜索栏的显示</div>
+                                                </div>
+                                                <Switch checked={nodeSearchVisible} onCheckedChange={setNodeSearchVisible} />
+                                            </div>
+                                        </section>
+                                    </>
                                 )}
 
                                 {/* 数据与版本 - 导入导出 */}

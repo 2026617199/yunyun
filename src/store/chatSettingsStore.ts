@@ -13,6 +13,8 @@ type ChatSettingsState = {
   autoSaveEnabled: boolean
   /** 网格显示开关 */
   gridVisible: boolean
+  /** 节点搜索栏显示开关 */
+  nodeSearchVisible: boolean
 }
 
 type ChatSettingsActions = {
@@ -20,6 +22,7 @@ type ChatSettingsActions = {
   setDefaultPersonaId: (personaId: ChatPersonaId) => void
   setAutoSaveEnabled: (enabled: boolean) => void
   setGridVisible: (visible: boolean) => void
+  setNodeSearchVisible: (visible: boolean) => void
   resetToDefault: () => void
 }
 
@@ -28,6 +31,7 @@ const INITIAL_STATE: ChatSettingsState = {
   defaultPersonaId: 'none',
   autoSaveEnabled: true,
   gridVisible: true,
+  nodeSearchVisible: true,
 }
 
 export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActions>()(
@@ -39,6 +43,7 @@ export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActio
       setDefaultPersonaId: (personaId) => set({ defaultPersonaId: personaId }),
       setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
       setGridVisible: (visible) => set({ gridVisible: visible }),
+      setNodeSearchVisible: (visible) => set({ nodeSearchVisible: visible }),
       resetToDefault: () => set(INITIAL_STATE),
     }),
     {

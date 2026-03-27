@@ -8,7 +8,11 @@ import {
     type InternalNode,
     useReactFlow,
     ControlButton,
+    BackgroundVariant,
 } from '@xyflow/react'
+
+import { NodeSearch } from '@/components/node-search'
+import type { Node } from '@xyflow/react'
 import { Eye, EyeOff, Upload } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
@@ -36,6 +40,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
     const addNode = useCanvasFlowStore((state) => state.addNode)
     const switchProject = useCanvasFlowStore((state) => state.switchProject)
     const gridVisible = useChatSettingsStore((state) => state.gridVisible)
+    const nodeSearchVisible = useChatSettingsStore((state) => state.nodeSearchVisible)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
 
     // 当 projectId 变化时切换项目
@@ -224,7 +229,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                     panOnDrag={[1]}
                     selectionOnDrag={true}
                 >
-                    {gridVisible && <Background />}
+                    {gridVisible && <Background variant={BackgroundVariant.Dots} />}
                     <Controls>
                         <ControlButton onClick={() => setIsMiniMapVisible((prev) => !prev)}>
                             {isMiniMapVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -242,6 +247,20 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                             <Upload className="size-12" />
                             <span className="text-lg font-medium">释放图片到画布</span>
                         </div>
+                    </div>
+                )}
+
+                {/* 节点搜索框 */}
+                {nodeSearchVisible && (
+                    <div className="absolute top-4 right-4 z-10">
+                        <NodeSearch
+                            onSearch={(searchString) => {
+                                const allNodes = useCanvasFlowStore.getState().nodes
+                                return allNodes.filter((node) =>
+                                    node.data?.promptDraft?.toLowerCase().includes(searchString.toLowerCase())
+                                )
+                            }}
+                        />
                     </div>
                 )}
             </div>
