@@ -11,12 +11,15 @@ type ChatSettingsState = {
   defaultPersonaId: ChatPersonaId
   /** 自动保存开关 */
   autoSaveEnabled: boolean
+  /** 网格显示开关 */
+  gridVisible: boolean
 }
 
 type ChatSettingsActions = {
   setDefaultModel: (model: string) => void
   setDefaultPersonaId: (personaId: ChatPersonaId) => void
   setAutoSaveEnabled: (enabled: boolean) => void
+  setGridVisible: (visible: boolean) => void
   resetToDefault: () => void
 }
 
@@ -24,6 +27,7 @@ const INITIAL_STATE: ChatSettingsState = {
   defaultModel: DEFAULT_CANVAS_CHAT_MODEL,
   defaultPersonaId: 'none',
   autoSaveEnabled: true,
+  gridVisible: true,
 }
 
 export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActions>()(
@@ -34,6 +38,7 @@ export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActio
       setDefaultModel: (model) => set({ defaultModel: model }),
       setDefaultPersonaId: (personaId) => set({ defaultPersonaId: personaId }),
       setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+      setGridVisible: (visible) => set({ gridVisible: visible }),
       resetToDefault: () => set(INITIAL_STATE),
     }),
     {

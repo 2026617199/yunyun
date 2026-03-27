@@ -63,7 +63,7 @@ const sectionIdSet = new Set(settingSections.map((item) => item.id))
 
 export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     const [activeSection, setActiveSection] = useState(settingSections[0].id)
-    const { defaultModel, defaultPersonaId, autoSaveEnabled, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, resetToDefault } = useChatSettingsStore()
+    const { defaultModel, defaultPersonaId, autoSaveEnabled, gridVisible, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, setGridVisible, resetToDefault } = useChatSettingsStore()
     const { success, error } = useMessage()
     const exportCanvasData = useCanvasFlowStore((state) => state.exportCanvasData)
     const importCanvasData = useCanvasFlowStore((state) => state.importCanvasData)
@@ -219,6 +219,19 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                                                 <div className="text-xs text-slate-500 mt-0.5">新建或删除节点时自动保存画布</div>
                                             </div>
                                             <Switch checked={autoSaveEnabled} onCheckedChange={setAutoSaveEnabled} />
+                                        </div>
+                                    </section>
+                                )}
+
+                                {/* 画布设置 - 网格显示开关 */}
+                                {activeSection === 'canvas' && (
+                                    <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="text-sm font-medium text-slate-800">网格显示</div>
+                                                <div className="text-xs text-slate-500 mt-0.5">控制画布背景网格线的显示</div>
+                                            </div>
+                                            <Switch checked={gridVisible} onCheckedChange={setGridVisible} />
                                         </div>
                                     </section>
                                 )}

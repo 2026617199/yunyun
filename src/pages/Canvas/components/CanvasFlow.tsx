@@ -15,6 +15,7 @@ import { useDropzone } from 'react-dropzone'
 import { nodeTypes } from '../constants/canvasConfig'
 import { CanvasContextMenu, type CanvasNodeType } from './CanvasContextMenu'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
+import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { uploadImage } from '@/api/ai'
 import type { AllNodeType, EdgeType } from '@/types/flow'
 
@@ -34,6 +35,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
     const onConnect = useCanvasFlowStore((state) => state.onConnect)
     const addNode = useCanvasFlowStore((state) => state.addNode)
     const switchProject = useCanvasFlowStore((state) => state.switchProject)
+    const gridVisible = useChatSettingsStore((state) => state.gridVisible)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
 
     // 当 projectId 变化时切换项目
@@ -222,7 +224,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                     panOnDrag={[1]}
                     selectionOnDrag={true}
                 >
-                    <Background />
+                    {gridVisible && <Background />}
                     <Controls>
                         <ControlButton onClick={() => setIsMiniMapVisible((prev) => !prev)}>
                             {isMiniMapVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
