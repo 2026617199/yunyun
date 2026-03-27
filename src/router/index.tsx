@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import CanvasPage from '@/pages/Canvas'
 import HomePage from '@/pages/Home'
 import ProjectListPage from '@/pages/ProjectList'
+import TestPage from '@/pages/Test'
 
 const router = createBrowserRouter([
     {
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
     {
         path: '/canvas/:projectId',
         element: <CanvasPage />
+    },
+    {
+        path: '/test',
+        element: <TestPage />
     }
 ])
 
