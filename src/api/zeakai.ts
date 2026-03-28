@@ -1,7 +1,8 @@
 import { zeakaiRequest } from '@/utils/zeakaiService'
+import type { submitMjImagineResponse, fetchMjTaskResponse } from '@/types/MJGeneration'
 
 // 提交 Midjourney imagine 任务
-export function submitMjImagine(data) {
+export function submitMjImagine(data: { prompt: string }) {
   return zeakaiRequest({
     url: '/mj/submit/imagine',
     method: 'post',
@@ -16,3 +17,4 @@ export function fetchMjTask(id: string) {
     method: 'get'
   })
 }
+ 

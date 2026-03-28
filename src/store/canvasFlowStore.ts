@@ -9,6 +9,7 @@ import {
 import { create } from 'zustand'
 
 import { createImageGeneration, createVideoGeneration, getImageTaskStatus, getVideoTaskStatus } from '@/api/ai'
+import { submitMjImagine, fetchMjTask } from '@/api/zeakai'
 import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-presets'
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
@@ -304,6 +305,98 @@ const pollImageGeneration = async (
     }
   } catch (pollError) {
     console.error('图片生成轮询失败:', pollError)
+    stopImagePollingInternal(nodeId)
+    setState((state) => ({
+      nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
+        ...data,
+        status: GenerationStatus.FAILED,
+        error: {
+          code: 'POLL_ERROR',
+          message: '轮询失败，请稍后再试',
+        },
+      })),
+    }))
+  }
+}
+
+/**
+ * Midjourney 图片生成轮询逻辑
+ */
+const pollMjImageGeneration = async (
+  taskId: string,
+  nodeId: string,//防止节点被删除后仍尝试轮询
+  signal: AbortSignal, // 用于取消轮询的
+  setState: (updater: (state: CanvasFlowState) => Partial<CanvasFlowState>) => void,
+  getState: () => CanvasFlowState
+) => {
+  try {
+    while (true) {
+      await wait(IMAGE_POLL_INTERVAL, signal)
+      if (signal.aborted) {
+        return
+      }
+
+      const response = await fetchMjTask(taskId)
+
+      const currentNode = getState().nodes.find((node) => node.id === nodeId)
+      if (!currentNode || currentNode.type !== 'imageNode') {
+        stopImagePollingInternal(nodeId)
+        return
+      }
+
+      // 从 progress 字符串（如 "50%"）提取数值
+      const progressValue = parseInt(response.progress?.replace('%', '') || '0', 10)
+
+      setState((state) => ({
+        nodes: updateImageNodeInList(state.nodes, nodeId, (data) => {
+          // SUCCESS 状态表示完成
+          if (response.status === 'SUCCESS') {
+            return {
+              ...data,
+              status: GenerationStatus.COMPLETED,
+              progress: 100,
+              task_id: response.id ?? taskId,
+              result: {
+                type: 'image',
+                data: response.imageUrl ? [{ url: response.imageUrl }] : [],
+              },
+              error: undefined,
+            }
+          }
+
+          // FAILURE 或 CANCEL 状态表示失败
+          if (response.status === 'FAILURE' || response.status === 'CANCEL') {
+            return {
+              ...data,
+              status: GenerationStatus.FAILED,
+              progress: progressValue,
+              task_id: response.id ?? taskId,
+              error: {
+                code: 'MJ_ERROR',
+                message: response.failReason || response.description || '生成失败，请稍后再试',
+              },
+            }
+          }
+
+          // NOT_START、SUBMITTED、MODAL 状态为排队中
+          const isQueued = ['NOT_START', 'SUBMITTED', 'MODAL'].includes(response.status)
+
+          return {
+            ...data,
+            status: isQueued ? GenerationStatus.QUEUED : GenerationStatus.IN_PROGRESS,
+            progress: progressValue,
+            task_id: response.id ?? taskId,
+          }
+        }),
+      }))
+
+      if (response.status === 'SUCCESS' || response.status === 'FAILURE' || response.status === 'CANCEL') {
+        stopImagePollingInternal(nodeId)
+        return
+      }
+    }
+  } catch (pollError) {
+    console.error('Midjourney 图片生成轮询失败:', pollError)
     stopImagePollingInternal(nodeId)
     setState((state) => ({
       nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
@@ -861,9 +954,27 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
       })),
     }))
 
+    // 判断是否为 Midjourney 模型
+    const isMidjourney = payload.model === 'midjourney'
+
     try {
-      const response: any = await createImageGeneration(payload)
-      const taskId = response?.id
+      let taskId: string
+
+      if (isMidjourney) {
+        // Midjourney 模型使用 zeakai API
+        const response = await submitMjImagine({ prompt: payload.prompt })
+        
+        // code === 1 表示提交成功
+        if (response.code !== 1) {
+          throw new Error(response.description || 'Midjourney 任务提交失败')
+        }
+        
+        taskId = response.result
+      } else {
+        // 其他模型使用原有 API
+        const response: any = await createImageGeneration(payload)
+        taskId = response?.id
+      }
 
       if (!taskId) {
         throw new Error('任务 ID 为空')
@@ -875,13 +986,19 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
           ...data,
           task_id: taskId,
           status: GenerationStatus.IN_PROGRESS,
-          progress: response?.progress ?? 0,
+          progress: 0,
         })),
       }))
 
       const controller = new AbortController()
       imagePollingControllers.set(nodeId, controller)
-      pollImageGeneration(taskId, nodeId, controller.signal, set, get)
+      
+      // 根据模型类型选择不同的轮询函数
+      if (isMidjourney) {
+        pollMjImageGeneration(taskId, nodeId, controller.signal, set, get)
+      } else {
+        pollImageGeneration(taskId, nodeId, controller.signal, set, get)
+      }
     } catch (startError) {
       console.error('创建图片生成任务失败:', startError)
       set((state) => ({
@@ -890,7 +1007,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
           status: GenerationStatus.FAILED,
           error: {
             code: 'CREATE_TASK_FAILED',
-            message: '创建任务失败，请稍后再试',
+            message: startError instanceof Error ? startError.message : '创建任务失败，请稍后再试',
           },
         })),
       }))
