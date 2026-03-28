@@ -1,10 +1,10 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createHashRouter, RouterProvider } from 'react-router-dom'
 import CanvasPage from '@/pages/Canvas'
 import HomePage from '@/pages/Home'
 import ProjectListPage from '@/pages/ProjectList'
 import TestPage from '@/pages/Test'
 
-const router = createBrowserRouter([
+const router = createHashRouter([
     {
         path: '/',
         element: <HomePage />
