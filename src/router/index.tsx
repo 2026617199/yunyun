@@ -1,4 +1,4 @@
-import { createHashRouter, RouterProvider, Outlet } from 'react-router-dom'
+import { createHashRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom'
 import CanvasPage from '@/pages/Canvas'
 import HomePage from '@/pages/Home'
 import ProjectListPage from '@/pages/ProjectList'
@@ -22,6 +22,10 @@ const router = createHashRouter([
   {
     element: <SidebarLayout />,
     children: [
+      {
+        path: '/',
+        element: <Navigate to="/home" replace />
+      },
       {
         path: '/home',
         element: <HomePage />
