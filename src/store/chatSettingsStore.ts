@@ -15,6 +15,8 @@ type ChatSettingsState = {
   gridVisible: boolean
   /** 节点搜索栏显示开关 */
   nodeSearchVisible: boolean
+  /** 调试工具面板显示开关*/
+  devToolsVisible: boolean
 }
 
 type ChatSettingsActions = {
@@ -23,6 +25,7 @@ type ChatSettingsActions = {
   setAutoSaveEnabled: (enabled: boolean) => void
   setGridVisible: (visible: boolean) => void
   setNodeSearchVisible: (visible: boolean) => void
+  setDevToolsVisible: (visible: boolean) => void
   resetToDefault: () => void
 }
 
@@ -31,7 +34,8 @@ const INITIAL_STATE: ChatSettingsState = {
   defaultPersonaId: 'none',
   autoSaveEnabled: true,
   gridVisible: true,
-  nodeSearchVisible: true,
+  nodeSearchVisible: false,
+  devToolsVisible: false,
 }
 
 export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActions>()(
@@ -44,6 +48,7 @@ export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActio
       setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
       setGridVisible: (visible) => set({ gridVisible: visible }),
       setNodeSearchVisible: (visible) => set({ nodeSearchVisible: visible }),
+      setDevToolsVisible: (visible) => set({ devToolsVisible: visible }),
       resetToDefault: () => set(INITIAL_STATE),
     }),
     {
