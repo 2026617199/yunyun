@@ -3,8 +3,10 @@ import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
 import { Button } from '@/components/ui/button'
+import { NodeContextMenu } from '@/pages/Canvas/components/NodeContextMenu'
 import { getAgentPresetLabelById } from '@/constants/agent-presets'
 import { useAgentExecution } from '@/hooks/useAgentExecution'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { AgentNodeType } from '@/types/flow'
 
 const areAgentNodePropsEqual = (prev: NodeProps<AgentNodeType>, next: NodeProps<AgentNodeType>) => {
@@ -29,8 +31,11 @@ export const AgentNode = memo(({ id, data, selected }: NodeProps<AgentNodeType>)
         messages: data.messages,
     })
     const presetLabel = getAgentPresetLabelById(data.agentPresetId)
+    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
+    const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
 
     return (
+        <NodeContextMenu onDuplicate={() => duplicateNode(id)} onDelete={() => deleteNode(id)}>
         <div className="group/node relative">
             <ButtonHandle
                 type="target"
@@ -59,6 +64,7 @@ export const AgentNode = memo(({ id, data, selected }: NodeProps<AgentNodeType>)
                 </Button>
             </div>
         </div>
+        </NodeContextMenu>
     )
 }, areAgentNodePropsEqual)
 
