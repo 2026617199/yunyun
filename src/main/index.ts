@@ -21,6 +21,8 @@ function createWindow(): void {
     // 启动时最大化窗口，提供全屏般的体验
     mainWindow.maximize()
     mainWindow.show()
+    // 启动时自动打开开发者工具
+    mainWindow.webContents.openDevTools()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
