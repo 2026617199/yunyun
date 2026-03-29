@@ -66,7 +66,7 @@ const sectionIdSet = new Set(settingSections.map((item) => item.id))
 
 export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     const [activeSection, setActiveSection] = useState(settingSections[0].id)
-    const { defaultModel, defaultPersonaId, autoSaveEnabled, gridVisible, nodeSearchVisible, savePathJson, savePathImage, savePathVideo, savePathDraftCover, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, setGridVisible, setNodeSearchVisible, setSavePathJson, setSavePathImage, setSavePathVideo, setSavePathDraftCover, resetToDefault } = useChatSettingsStore()
+  const { defaultModel, defaultPersonaId, autoSaveEnabled, gridVisible, nodeSearchVisible, savePathJson, savePathImage, savePathVideo, savePathDraftCover, devToolsVisible, setDefaultModel, setDefaultPersonaId, setAutoSaveEnabled, setGridVisible, setNodeSearchVisible, setSavePathJson, setSavePathImage, setSavePathVideo, setSavePathDraftCover, setDevToolsVisible, resetToDefault } = useChatSettingsStore()
     const { success, error } = useMessage()
     const exportCanvasData = useCanvasFlowStore((state) => state.exportCanvasData)
     const importCanvasData = useCanvasFlowStore((state) => state.importCanvasData)
@@ -323,7 +323,7 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                                                     <div className="text-sm font-medium text-slate-800">调试工具面板</div>
                                                     <div className="text-xs text-slate-500 mt-0.5">控制 ReactFlow 调试工具面板的显示</div>
                                                 </div>
-                    
+                            <Switch checked={devToolsVisible} onCheckedChange={setDevToolsVisible} />
                                             </div>
                                         </section>
                                     </>
