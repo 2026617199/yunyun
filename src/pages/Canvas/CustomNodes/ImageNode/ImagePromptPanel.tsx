@@ -23,6 +23,7 @@ import type { ImageGenerationNode, NoteNodeData } from '@/types/flow'
 
 import { COMMAND_MOCK, MENTION_MOCK, STYLE_TEMPLATE_MOCK } from './mock'
 import { IntegratedParamsPanel } from './components/IntegratedParamsPanel'
+import { MidjourneyAdvancedPanel } from './components/MidjourneyAdvancedPanel'
 
 /**
  * 图片节点底部增强输入区
@@ -48,6 +49,12 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
   const [imageCount, setImageCount] = useState<ImageCount>(1)
   // 正在生成的数量（用于显示进度提示）
   const [generatingCount, setGeneratingCount] = useState(0)
+
+    // Midjourney 高级参数
+    const [mjPValue, setMjPValue] = useState('')
+    const [mjStylize, setMjStylize] = useState(0)
+    const [mjWeird, setMjWeird] = useState(0)
+    const [mjVariability, setMjVariability] = useState(0)
 
     const [mentionQuery, setMentionQuery] = useState('')
     const [commandQuery, setCommandQuery] = useState('')
@@ -82,6 +89,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const aspectRatio = currentImageData?.aspectRatio ?? '1:1'
     const uploadedUrls = currentImageData?.uploadedUrls ?? []
     const promptDraftHtml = currentImageData?.promptDraftHtml ?? '<p></p>'
+    const isMidjourneyModel = model === 'midjourney'
 
     const resetSuggestionState = () => {
         setActiveMode(null)
@@ -677,6 +685,20 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {/* Midjourney 高级选项 - 仅在选择 Midjourney 模型时显示 */}
+                    {isMidjourneyModel && (
+                        <MidjourneyAdvancedPanel
+                            pValue={mjPValue}
+                            stylize={mjStylize}
+                            weird={mjWeird}
+                            variability={mjVariability}
+                            onPValueChange={setMjPValue}
+                            onStylizeChange={setMjStylize}
+                            onWeirdChange={setMjWeird}
+                            onVariabilityChange={setMjVariability}
+                        />
+                    )}
 
             <div className="ml-auto flex items-center gap-2">
               {/* 数量选择按钮 */}
