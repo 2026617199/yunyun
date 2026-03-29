@@ -1,17 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2, FileText as TextIcon, X } from 'lucide-react'
-import { getProjectList, createProject, deleteProject, type ProjectMeta } from '@/utils/projectStorage'
+import { Plus, Trash2, FileText as TextIcon, X, Pencil, Upload, X as CloseIcon } from 'lucide-react'
+import { getProjectList, createProject, deleteProject, updateProject, type ProjectMeta } from '@/utils/projectStorage'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { uploadImageFile } from '@/utils/utils'
 
 export default function ProjectListPage() {
     const navigate = useNavigate()
     const [projects, setProjects] = useState<ProjectMeta[]>([])
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [projectToDelete, setProjectToDelete] = useState<ProjectMeta | null>(null)
+  const [projectToEdit, setProjectToEdit] = useState<ProjectMeta | null>(null)
+
+  // 创建表单
     const [newProjectName, setNewProjectName] = useState('')
+  const [newProjectCover, setNewProjectCover] = useState('')
+  const [newProjectDesc, setNewProjectDesc] = useState('')
+  const [newProjectType, setNewProjectType] = useState<'video' | 'script'>('video')
+  const [coverPreview, setCoverPreview] = useState('')
+  const coverFileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  // 编辑表单
+  const [editName, setEditName] = useState('')
+  const [editCover, setEditCover] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editCoverPreview, setEditCoverPreview] = useState('')
+  const editCoverFileInputRef = useRef<HTMLInputElement>(null)
+  const [isEditUploading, setIsEditUploading] = useState(false)
 
     // 加载项目列表
     useEffect(() => {
@@ -24,24 +43,71 @@ export default function ProjectListPage() {
         navigate(`/canvas/${projectId}`)
     }
 
-    // 打开创建项目弹窗
-    const openCreateDialog = () => {
+  // 重置创建表单状态
+  const resetCreateFormState = () => {
         setNewProjectName('')
+      setNewProjectCover('')
+      setNewProjectDesc('')
+    setNewProjectType('video')
+      setCoverPreview('')
+      setIsUploading(false)
+      if (coverFileInputRef.current) {
+        coverFileInputRef.current.value = ''
+      }
+  }
+
+  // 打开创建项目弹窗
+  const openCreateDialog = () => {
+    resetCreateFormState()
         setIsCreateDialogOpen(true)
     }
 
+    // 处理封面文件选择（创建）
+    const handleCoverFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+        // 生成本地预览 URL
+        const previewUrl = URL.createObjectURL(file)
+        setCoverPreview(previewUrl)
+      }
+    }
+
+    // 删除封面（创建）
+    const handleRemoveCover = () => {
+      setCoverPreview('')
+      if (coverFileInputRef.current) {
+        coverFileInputRef.current.value = ''
+      }
+    }
+
     // 确认创建项目
-    const handleConfirmCreate = () => {
-        const newProject = createProject(newProjectName || undefined)
-        setProjects(getProjectList())
-        setIsCreateDialogOpen(false)
-        navigate(`/canvas/${newProject.id}`)
+    const handleConfirmCreate = async () => {
+      setIsUploading(true)
+      let coverUrl = newProjectCover
+
+      // 如果选择了新文件，先上传
+      if (coverPreview && coverFileInputRef.current?.files?.[0]) {
+        const uploadedUrl = await uploadImageFile(coverFileInputRef.current.files[0])
+        if (uploadedUrl) {
+          coverUrl = uploadedUrl
+        }
+      }
+
+      createProject(
+        newProjectName || undefined,
+        coverUrl || undefined,
+        newProjectDesc || undefined,
+        newProjectType
+      )
+      setProjects(getProjectList())
+      setIsUploading(false)
+      setIsCreateDialogOpen(false)
     }
 
     // 取消创建
     const handleCancelCreate = () => {
         setIsCreateDialogOpen(false)
-        setNewProjectName('')
+      resetCreateFormState()
     }
 
     // 打开删除确认弹窗
@@ -67,6 +133,82 @@ export default function ProjectListPage() {
         setProjectToDelete(null)
     }
 
+  // 重置编辑表单状态
+  const resetEditFormState = () => {
+    setEditName('')
+    setEditCover('')
+    setEditDesc('')
+    setEditCoverPreview('')
+    setIsEditUploading(false)
+    if (editCoverFileInputRef.current) {
+      editCoverFileInputRef.current.value = ''
+    }
+  }
+
+  // 打开编辑弹窗
+  const openEditDialog = (e: React.MouseEvent, project: ProjectMeta) => {
+    e.stopPropagation()
+    // 先重置表单状态，再回显项目数据
+    resetEditFormState()
+    setProjectToEdit(project)
+    setEditName(project.name)
+    setEditCover(project.coverUrl || '')
+    setEditDesc(project.description || '')
+    setIsEditDialogOpen(true)
+  }
+
+  // 处理封面文件选择（编辑）
+  const handleEditCoverFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // 生成本地预览 URL
+      const previewUrl = URL.createObjectURL(file)
+      setEditCoverPreview(previewUrl)
+    }
+  }
+
+  // 删除封面（编辑）
+  const handleEditRemoveCover = () => {
+    setEditCoverPreview('')
+    if (editCoverFileInputRef.current) {
+      editCoverFileInputRef.current.value = ''
+    }
+  }
+
+  // 确认编辑
+  const handleConfirmEdit = async () => {
+    if (projectToEdit) {
+      setIsEditUploading(true)
+      let coverUrl = editCover
+
+      // 如果选择了新文件，先上传
+      if (editCoverPreview && editCoverFileInputRef.current?.files?.[0]) {
+        const uploadedUrl = await uploadImageFile(editCoverFileInputRef.current.files[0])
+        if (uploadedUrl) {
+          coverUrl = uploadedUrl
+        }
+      }
+
+      updateProject(projectToEdit.id, {
+        name: editName,
+        coverUrl: coverUrl || undefined,
+        description: editDesc || undefined,
+      })
+      setProjects(getProjectList())
+      setIsEditUploading(false)
+    }
+    setIsEditDialogOpen(false)
+    setProjectToEdit(null)
+      resetEditFormState()
+    }
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setIsEditDialogOpen(false)
+    setProjectToEdit(null)
+      resetEditFormState()
+    }
+
     return (
         <div className="min-h-screen bg-[#050508] text-white flex flex-col overflow-hidden relative">
             {/* 背景光效 */}
@@ -87,10 +229,7 @@ export default function ProjectListPage() {
                         <h1 className="text-2xl font-semibold tracking-wider text-white/80 uppercase">
                             PROJECTS // 项目管理
                         </h1>
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm text-[13px]">
-                            <span className="text-white/60">COMPUTE</span>
-                            <span className="text-[#00F0FF] font-semibold shadow-[0_0_8px_rgba(0,240,255,0.4)]">1,080</span>
-                        </div>
+
                     </div>
 
                     {/* 空状态提示 */}
@@ -117,38 +256,60 @@ export default function ProjectListPage() {
                             <div
                                 key={project.id}
                                 onClick={() => handleProjectClick(project.id)}
-                                className="relative aspect-square bg-[rgba(15,15,20,0.4)] border border-white/[0.08] rounded-xl cursor-pointer hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_10px_30px_rgba(0,240,255,0.1)] transition-all flex flex-col items-center justify-center p-4 group"
+                            className="relative aspect-square bg-[rgba(15,15,20,0.4)] border border-white/[0.08] rounded-xl cursor-pointer hover:border-[rgba(0,240,255,0.4)] hover:shadow-[0_10px_30px_rgba(0,240,255,0.1)] transition-all flex flex-col items-center justify-center p-4 group overflow-hidden"
                             >
                                 {/* 类型标签 */}
                                 <div className="absolute top-3 left-3 px-2 py-1 rounded text-[10px] tracking-wider backdrop-blur-sm flex items-center gap-1 bg-[rgba(0,240,255,0.1)] text-[#00F0FF] border border-[rgba(0,240,255,0.2)]">
                                     <TextIcon size={12} />
-                                    <span>文本</span>
+                              <span>{project.type === 'video' ? '视频创作' : '剧本创作'}</span>
                                 </div>
 
-                                {/* 项目图标 */}
-                                <TextIcon size={40} className="text-white/15 transition-all group-hover:text-[#00F0FF] group-hover:drop-shadow-[0_0_8px_#00F0FF]" />
+                            {/* 封面图 / 图标 */}
+                            {project.coverUrl ? (
+                              <img
+                                src={project.coverUrl}
+                                alt={project.name}
+                                className="w-16 h-16 rounded-lg object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none'
+                                }}
+                              />
+                            ) : (
+                              <TextIcon size={40} className="text-white/15 transition-all group-hover:text-[#00F0FF] group-hover:drop-shadow-[0_0_8px_#00F0FF]" />
+                            )}
 
                                 {/* 项目名称 */}
                                 <span className="text-sm font-medium text-white/80 text-center truncate w-full mt-3">
                                     {project.name}
                                 </span>
 
-                                {/* 删除按钮 - 悬停时显示 */}
-                                <button
-                                    onClick={(e) => openDeleteDialog(e, project)}
-                                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="删除项目"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                            {/* 操作按钮组 - 悬停时显示 */}
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {/* 编辑按钮 */}
+                              <button
+                                onClick={(e) => openEditDialog(e, project)}
+                                className="w-6 h-6 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/40 flex items-center justify-center"
+                                title="编辑项目"
+                              >
+                                <Pencil size={12} />
+                              </button>
+                              {/* 删除按钮 */}
+                              <button
+                                onClick={(e) => openDeleteDialog(e, project)}
+                                className="w-6 h-6 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/40 flex items-center justify-center"
+                                title="删除项目"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
+                          </div>
                         ))}
                     </div>
                 </main>
 
             {/* 创建项目弹窗 */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent className="bg-[#0a0a0f] border-white/[0.08] p-6 w-[400px]">
+          <DialogContent className="bg-[#0a0a0f] border-white/[0.08] p-6 w-[420px]">
                     <div className="flex items-center justify-between mb-6">
                         <DialogTitle className="text-white text-lg">创建新项目</DialogTitle>
                         <button
@@ -169,6 +330,73 @@ export default function ProjectListPage() {
                                 className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white placeholder-white/30 outline-none focus:border-[#00F0FF] transition-colors"
                             />
                         </div>
+              <div>
+                <label className="block text-sm text-white/60 mb-2">项目类型</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNewProjectType('video')}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all ${newProjectType === 'video' ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50' : 'bg-white/[0.03] text-white/60 border border-white/[0.08]'}`}
+                  >
+                    视频创作
+                  </button>
+                  <button
+                    onClick={() => setNewProjectType('script')}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm transition-all ${newProjectType === 'script' ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50' : 'bg-white/[0.03] text-white/60 border border-white/[0.08]'}`}
+                  >
+                    剧本创作
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-white/60 mb-2">封面图（可选）</label>
+                {/* 隐藏的文件输入 */}
+                <input
+                  ref={coverFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverFileSelect}
+                  className="hidden"
+                />
+
+                {/* 预览区域 */}
+                {coverPreview && (
+                  <div className="relative group mb-3">
+                    <img
+                      src={coverPreview}
+                      alt="封面预览"
+                      className="w-full h-32 object-cover rounded-lg border border-white/[0.08]"
+                    />
+                    <button
+                      onClick={handleRemoveCover}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white/80 hover:bg-black/80 flex items-center justify-center"
+                    >
+                      <CloseIcon size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* 上传按钮 */}
+                {!coverPreview && (
+                  <button
+                    type="button"
+                    onClick={() => coverFileInputRef.current?.click()}
+                    className="w-full px-4 py-8 bg-white/[0.03] border border-dashed border-white/20 rounded-lg text-white/40 hover:border-[#00F0FF] hover:text-[#00F0FF] hover:bg-[rgba(0,240,255,0.05)] transition-all flex flex-col items-center justify-center gap-2"
+                  >
+                    <Upload size={24} />
+                    <span className="text-sm">点击上传封面图</span>
+                  </button>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-white/60 mb-2">项目描述（可选）</label>
+                <textarea
+                  value={newProjectDesc}
+                  onChange={(e) => setNewProjectDesc(e.target.value)}
+                  placeholder="简要描述项目..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white placeholder-white/30 outline-none focus:border-[#00F0FF] transition-colors resize-none"
+                />
+              </div>
                         <div className="flex gap-3 pt-2">
                             <Button
                                 className="flex-1 bg-white/[0.03] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.05] rounded-lg"
@@ -187,6 +415,110 @@ export default function ProjectListPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+        {/* 编辑项目弹窗 */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="bg-[#0a0a0f] border-white/[0.08] p-6 w-[420px]">
+            <div className="flex items-center justify-between mb-6">
+              <DialogTitle className="text-white text-lg">编辑项目</DialogTitle>
+              <button
+                onClick={handleCancelEdit}
+                className="text-white/40 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-2">项目名称</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="输入项目名称..."
+                  className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white placeholder-white/30 outline-none focus:border-[#00F0FF] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/60 mb-2">封面图（可选）</label>
+                {/* 隐藏的文件输入 */}
+                <input
+                  ref={editCoverFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditCoverFileSelect}
+                  className="hidden"
+                />
+
+                {/* 预览区域 - 优先显示新上传的预览，否则显示原有封面 */}
+                {(editCoverPreview || editCover) && (
+                  <div className="relative group mb-3">
+                    <img
+                      src={editCoverPreview || editCover}
+                      alt="封面预览"
+                      className="w-full h-32 object-cover rounded-lg border border-white/[0.08]"
+                    />
+                    {/* 删除按钮 */}
+                    <button
+                      onClick={editCoverPreview ? handleEditRemoveCover : () => setEditCover('')}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white/80 hover:bg-black/80 flex items-center justify-center"
+                    >
+                      <CloseIcon size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* 上传按钮 - 只有在删除封面后显示 */}
+                {!editCoverPreview && !editCover && (
+                  <button
+                    type="button"
+                    onClick={() => editCoverFileInputRef.current?.click()}
+                    className="w-full px-4 py-8 bg-white/[0.03] border border-dashed border-white/20 rounded-lg text-white/40 hover:border-[#00F0FF] hover:text-[#00F0FF] hover:bg-[rgba(0,240,255,0.05)] transition-all flex flex-col items-center justify-center gap-2"
+                  >
+                    <Upload size={24} />
+                    <span className="text-sm">点击上传封面图</span>
+                  </button>
+                )}
+
+                {/* 更换按钮 - 如果有封面，显示更换按钮 */}
+                {(editCoverPreview || editCover) && !editCoverPreview && (
+                  <button
+                    type="button"
+                    onClick={() => editCoverFileInputRef.current?.click()}
+                    className="w-full px-4 py-2 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white/60 hover:border-[#00F0FF] hover:text-[#00F0FF] transition-all text-sm"
+                  >
+                    更换封面
+                  </button>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm text-white/60 mb-2">项目描述（可选）</label>
+                <textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  placeholder="简要描述项目..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white placeholder-white/30 outline-none focus:border-[#00F0FF] transition-colors resize-none"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  className="flex-1 bg-white/[0.03] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.05] rounded-lg"
+                  onClick={handleCancelEdit}
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="blue"
+                  className="flex-1 rounded-lg"
+                  onClick={handleConfirmEdit}
+                >
+                  保存
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
             {/* 删除确认弹窗 */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

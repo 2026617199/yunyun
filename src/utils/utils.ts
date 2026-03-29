@@ -1,3 +1,4 @@
+import { uploadImage } from "@/api/ai"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -50,4 +51,20 @@ export function hasAiToken(): boolean {
 
 export function hasZeakaiToken(): boolean {
   return !!getZeakaiToken()
+}
+
+
+/**
+ * 上传图片并获取 URL
+ */
+export async function uploadImageFile(file: File): Promise<string | undefined> {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await uploadImage(formData)
+    return response.data.url
+  } catch (error) {
+    console.error('上传图片失败:', error)
+    return undefined
+  }
 }
