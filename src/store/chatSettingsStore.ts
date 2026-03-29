@@ -46,7 +46,6 @@ const INITIAL_STATE: ChatSettingsState = {
   defaultPersonaId: 'none',
   autoSaveEnabled: true,
   gridVisible: true,
-  nodeSearchVisible: true,
   savePathJson: '',
   savePathImage: '',
   savePathVideo: '',
