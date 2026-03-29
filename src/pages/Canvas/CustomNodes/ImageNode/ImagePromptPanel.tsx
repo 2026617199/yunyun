@@ -51,10 +51,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
   const [generatingCount, setGeneratingCount] = useState(0)
 
     // Midjourney 高级参数
-    const [mjPValue, setMjPValue] = useState('')
-    const [mjStylize, setMjStylize] = useState(0)
-    const [mjWeird, setMjWeird] = useState(0)
-    const [mjVariability, setMjVariability] = useState(0)
+  const [mjPValue, setMjPValue] = useState('')
 
     const [mentionQuery, setMentionQuery] = useState('')
     const [commandQuery, setCommandQuery] = useState('')
@@ -689,14 +686,8 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                     {/* Midjourney 高级选项 - 仅在选择 Midjourney 模型时显示 */}
                     {isMidjourneyModel && (
                         <MidjourneyAdvancedPanel
-                            pValue={mjPValue}
-                            stylize={mjStylize}
-                            weird={mjWeird}
-                            variability={mjVariability}
-                            onPValueChange={setMjPValue}
-                            onStylizeChange={setMjStylize}
-                            onWeirdChange={setMjWeird}
-                            onVariabilityChange={setMjVariability}
+                pValue={mjPValue}
+                onPValueChange={setMjPValue}
                         />
                     )}
 
