@@ -79,6 +79,18 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
         setMenuScreenPosition({ x: event.clientX, y: event.clientY })
     }, [])
 
+    // 通过原生 dblclick 事件实现双击唤出菜单
+    const handleNativeDblClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        // 只响应点在画布空白区域（.react-flow__pane）上的双击
+        const target = event.target as Element
+        if (target.closest('.react-flow__pane')) {
+            // 阻止 ReactFlow 默认的双击缩放行为
+            event.preventDefault()
+            event.stopPropagation()
+            openContextMenuAt(event.clientX, event.clientY)
+        }
+    }, [openContextMenuAt])
+
     const handleConnectStart = useCallback(
         (_, params) => {
             if (!params?.nodeId || !params?.handleType) {
@@ -211,6 +223,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                 {...getRootProps()}
                 ref={contextMenuTriggerRef}
                 className="h-full w-full relative"
+                onDoubleClick={handleNativeDblClick}
             >
                 <input {...getInputProps()} />
                 <ReactFlow<AllNodeType, EdgeType>
@@ -231,6 +244,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                     deleteKeyCode={['Backspace', 'Delete']}
                     panOnDrag={[1]}
                     selectionOnDrag={true}
+                    zoomOnDoubleClick={false}
                 >
                     {gridVisible && <Background variant={BackgroundVariant.Dots} />}
                     <Controls>

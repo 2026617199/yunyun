@@ -1,4 +1,6 @@
 import { FileText, Film, FolderOpen, Clock, Sparkles, TrendingUp, Zap, Layers } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { createProject } from '@/utils/projectStorage'
 
 // 顶部横向滑动卡片数据
 const carouselCards = [
@@ -45,7 +47,7 @@ const featurePanels = [
         gradient: 'from-cyan-500/20 to-blue-500/20',
         accentColor: 'cyan',
     },
-]
+] as const
 
 // 统计数据
 const statsData = [
@@ -62,6 +64,15 @@ const quickActions = [
 ]
 
 export default function HomePage() {
+    const navigate = useNavigate()
+
+    const handleFeaturePanelClick = (panelId: string) => {
+        if (panelId === 'video' || panelId === 'text') {
+            const newProject = createProject()
+            navigate(`/canvas/${newProject.id}`)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden relative">
             {/* 背景网格纹理 */}
@@ -157,8 +168,8 @@ export default function HomePage() {
 
                 {/* 底部功能选择区 */}
           <section className="flex-1 flex items-start justify-center gap-8 pb-8 w-[80%] mx-auto">
-                    {featurePanels.map((panel) => (
-                        <FeaturePanel key={panel.id} data={panel} />
+                {featurePanels.map((panel) => (
+                        <FeaturePanel key={panel.id} data={panel} onClick={() => handleFeaturePanelClick(panel.id)} />
                     ))}
                 </section>
             </main>
@@ -324,7 +335,7 @@ const Card = ({ data }: { data: typeof carouselCards[0] }) => {
 }
 
 // 功能面板组件
-const FeaturePanel = ({ data }: { data: typeof featurePanels[0] }) => {
+const FeaturePanel = ({ data, onClick }: { data: typeof featurePanels[number]; onClick?: () => void }) => {
     const Icon = data.icon
     const colorMap = {
         violet: {
@@ -344,6 +355,7 @@ const FeaturePanel = ({ data }: { data: typeof featurePanels[0] }) => {
 
     return (
         <div
+            onClick={onClick}
             className="
                 relative w-full rounded-2xl overflow-hidden
                 bg-gradient-to-br from-[#12121a] to-[#0a0a0f]
