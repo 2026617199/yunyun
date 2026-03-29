@@ -2,6 +2,7 @@ import { NodeResizer, Position, type NodeProps, useStore } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
+import { NodeContextMenu } from '@/pages/Canvas/components/NodeContextMenu'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { NoteNodeType } from '@/types/flow'
 
@@ -29,6 +30,7 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
 
     // console.log("文本节点重新渲染")
     return (
+        <NodeContextMenu onDuplicate={() => duplicateNode(id)} onDelete={() => deleteNode(id)}>
         <div className="group/node relative">
             <NodeResizer
                 isVisible={selected && !isDragging}
@@ -91,6 +93,7 @@ export const NoteNode = memo(({ id, data, selected, width, height, dragging }: N
                 </div>
             </div>
         </div>
+        </NodeContextMenu>
     )
 })
 

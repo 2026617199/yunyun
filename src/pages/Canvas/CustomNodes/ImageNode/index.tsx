@@ -2,6 +2,7 @@ import { NodeToolbar, Position, type NodeProps, useStore } from '@xyflow/react'
 import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
+import { NodeContextMenu } from '@/pages/Canvas/components/NodeContextMenu'
 import { useNodeScale } from '@/hooks/useNodeScale'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageNodeType } from '@/types/flow'
@@ -39,6 +40,7 @@ export const ImageNode = memo(({
     // console.log('图片节点重新渲染', id)
 
     return (
+        <NodeContextMenu onDuplicate={() => duplicateNode(id)} onDelete={() => deleteNode(id)}>
         <div className="group/node relative">
             {/* 左侧输入 Handle */}
             <ButtonHandle
@@ -91,6 +93,7 @@ export const ImageNode = memo(({
                 </div>
             </div>
         </div>
+        </NodeContextMenu>
     )
 })
 
