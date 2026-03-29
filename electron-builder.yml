@@ -15,12 +15,12 @@ win:
   executableName: 芸芸
   icon: resources/icons/icon.ico
 nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-    # 允许用户自定义安装路径
-  allowToChangeInstallationDirectory: true
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: resources/icons/icon.icns
