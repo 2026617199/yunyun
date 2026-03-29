@@ -15,6 +15,14 @@ type ChatSettingsState = {
   gridVisible: boolean
   /** 节点搜索栏显示开关 */
   nodeSearchVisible: boolean
+  /** 节点 JSON 保存路径 */
+  savePathJson: string
+  /** 图片保存路径 */
+  savePathImage: string
+  /** 视频保存路径 */
+  savePathVideo: string
+  /** 草稿封面保存路径 */
+  savePathDraftCover: string
 }
 
 type ChatSettingsActions = {
@@ -23,6 +31,10 @@ type ChatSettingsActions = {
   setAutoSaveEnabled: (enabled: boolean) => void
   setGridVisible: (visible: boolean) => void
   setNodeSearchVisible: (visible: boolean) => void
+  setSavePathJson: (path: string) => void
+  setSavePathImage: (path: string) => void
+  setSavePathVideo: (path: string) => void
+  setSavePathDraftCover: (path: string) => void
   resetToDefault: () => void
 }
 
@@ -32,6 +44,10 @@ const INITIAL_STATE: ChatSettingsState = {
   autoSaveEnabled: true,
   gridVisible: true,
   nodeSearchVisible: true,
+  savePathJson: '',
+  savePathImage: '',
+  savePathVideo: '',
+  savePathDraftCover: '',
 }
 
 export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActions>()(
@@ -44,6 +60,10 @@ export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActio
       setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
       setGridVisible: (visible) => set({ gridVisible: visible }),
       setNodeSearchVisible: (visible) => set({ nodeSearchVisible: visible }),
+      setSavePathJson: (path) => set({ savePathJson: path }),
+      setSavePathImage: (path) => set({ savePathImage: path }),
+      setSavePathVideo: (path) => set({ savePathVideo: path }),
+      setSavePathDraftCover: (path) => set({ savePathDraftCover: path }),
       resetToDefault: () => set(INITIAL_STATE),
     }),
     {
