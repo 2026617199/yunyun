@@ -41,16 +41,16 @@ export interface ImageGenerationNode {
   uploadedUrls?: string[]; // 面板上传的参考图 URL 列表
   templateId?: string; // 面板风格模板 ID
   // ---- 输出结果 ----
-  task_id?: string; // 任务 ID（用于轮询）
   result?: {
     type: string; // 结果类型
     data?: {
       url?: string; // 图片 URL
-    }[]; // 图片数据列表
+    }[]; // 图片数据列表（支持多张图片累积）
   }; // 生成结果
   // ---- 状态管理 ----
   status?: GenerationStatus; // 当前生成状态
   progress?: number; // 进度百分比（0-100）
+  completedCount?: number; // 已完成图片数量（用于多图生成场景判断）
   error?: {
     code?: string; // 错误代码
     message?: string; // 错误信息

@@ -118,8 +118,10 @@ type CanvasFlowState = {
 
 // 轮询频率（2 秒）
 const IMAGE_POLL_INTERVAL = 2000
-// 轮询控制器：用于中止旧轮询
+// 轮询控制器：用于中止轮询（taskId -> AbortController）
 const imagePollingControllers = new Map<string, AbortController>()
+// 记录每个节点待完成的 task 数量（用于多图生成场景）
+const pendingTaskCounts = new Map<string, number>()
 // 视频轮询频率（2 秒）
 const VIDEO_POLL_INTERVAL = 2000
 // 视频轮询控制器：用于中止旧轮询
@@ -190,14 +192,26 @@ const updateVideoNodeInList = (
 }
 
 /**
- * 停止某个节点的图片轮询
+ * 停止某个任务的图片轮询（只停止指定的 task）
  */
-const stopImagePollingInternal = (nodeId: string) => {
-  const controller = imagePollingControllers.get(nodeId)
+const stopImagePollingInternal = (taskId: string) => {
+  const controller = imagePollingControllers.get(taskId)
   if (controller) {
     controller.abort()
   }
-  imagePollingControllers.delete(nodeId)
+  imagePollingControllers.delete(taskId)
+}
+
+/**
+ * 停止某个节点下所有图片任务的轮询（删除节点或清空画布时调用）
+ */
+const stopAllImagePollingForNode = (nodeId: string) => {
+  // 遍历所有 controller，找到属于该 node 的（通过 taskId 特征或轮询中引用）
+  // 由于 taskId 散乱，这里通过 nodeId 参数传入后，由调用方负责中止
+  imagePollingControllers.forEach((controller, taskId) => {
+    controller.abort()
+    imagePollingControllers.delete(taskId)
+  })
 }
 
 /**
@@ -246,7 +260,8 @@ const pollImageGeneration = async (
   nodeId: string,
   signal: AbortSignal,
   setState: (updater: (state: CanvasFlowState) => Partial<CanvasFlowState>) => void,
-  getState: () => CanvasFlowState
+  getState: () => CanvasFlowState,
+  totalTaskCount: number // 用于判断是否所有任务都已完成
 ) => {
   try {
     while (true) {
@@ -259,33 +274,46 @@ const pollImageGeneration = async (
 
       const currentNode = getState().nodes.find((node) => node.id === nodeId)
       if (!currentNode || currentNode.type !== 'imageNode') {
-        stopImagePollingInternal(nodeId)
+        stopImagePollingInternal(taskId)
         return
       }
 
       setState((state) => ({
         nodes: updateImageNodeInList(state.nodes, nodeId, (data) => {
+          // 追加新结果到 result.data，而不是覆盖
+          const existingData = data.result?.data ?? []
+          const newResultData = response.result?.data ?? []
+          const mergedData = [...existingData, ...newResultData]
+
+          // 更新已完成数量
+          const completedCount = (data.completedCount ?? 0) + 1
+          // 判断是否所有任务都已完成
+          const allCompleted = completedCount >= totalTaskCount
+
           if (response.status === 'completed') {
             return {
               ...data,
-              status: GenerationStatus.COMPLETED,
-              progress: 100,
-              task_id: response.id ?? taskId,
-              result: response.result,
-              error: undefined,
+              status: allCompleted ? GenerationStatus.COMPLETED : GenerationStatus.IN_PROGRESS,
+              progress: allCompleted ? 100 : response.progress ?? 0,
+              result: {
+                type: response.result?.type ?? 'image',
+                data: mergedData,
+              },
+              completedCount,
+              error: allCompleted ? undefined : data.error,
             }
           }
 
           if (response.status === 'failed') {
             return {
               ...data,
-              status: GenerationStatus.FAILED,
+              status: allCompleted ? GenerationStatus.FAILED : GenerationStatus.IN_PROGRESS,
               progress: response.progress ?? 0,
-              task_id: response.id ?? taskId,
               error: response.error ?? {
                 code: 'UNKNOWN_ERROR',
                 message: '生成失败，请稍后再试',
               },
+              completedCount,
             }
           }
 
@@ -293,19 +321,28 @@ const pollImageGeneration = async (
             ...data,
             status: GenerationStatus.IN_PROGRESS,
             progress: response.progress ?? 0,
-            task_id: response.id ?? taskId,
           }
         }),
       }))
 
       if (response.status === 'completed' || response.status === 'failed') {
-        stopImagePollingInternal(nodeId)
+        stopImagePollingInternal(taskId)
+        // 如果所有任务都完成了，清理计数
+        const currentData = getState().nodes.find((n) => n.id === nodeId)?.data as ImageGenerationNode
+        if ((currentData?.completedCount ?? 0) >= totalTaskCount) {
+          pendingTaskCounts.delete(nodeId)
+        }
         return
       }
     }
   } catch (pollError) {
     console.error('图片生成轮询失败:', pollError)
-    stopImagePollingInternal(nodeId)
+    stopImagePollingInternal(taskId)
+    // 任务失败时也要检查是否所有任务都结束
+    const currentData = getState().nodes.find((n) => n.id === nodeId)?.data as ImageGenerationNode
+    if ((currentData?.completedCount ?? 0) >= totalTaskCount) {
+      pendingTaskCounts.delete(nodeId)
+    }
     setState((state) => ({
       nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
         ...data,
@@ -324,10 +361,11 @@ const pollImageGeneration = async (
  */
 const pollMjImageGeneration = async (
   taskId: string,
-  nodeId: string,//防止节点被删除后仍尝试轮询
-  signal: AbortSignal, // 用于取消轮询的
+  nodeId: string,
+  signal: AbortSignal,
   setState: (updater: (state: CanvasFlowState) => Partial<CanvasFlowState>) => void,
-  getState: () => CanvasFlowState
+  getState: () => CanvasFlowState,
+  totalTaskCount: number
 ) => {
   try {
     while (true) {
@@ -340,7 +378,7 @@ const pollMjImageGeneration = async (
 
       const currentNode = getState().nodes.find((node) => node.id === nodeId)
       if (!currentNode || currentNode.type !== 'imageNode') {
-        stopImagePollingInternal(nodeId)
+        stopImagePollingInternal(taskId)
         return
       }
 
@@ -349,18 +387,30 @@ const pollMjImageGeneration = async (
 
       setState((state) => ({
         nodes: updateImageNodeInList(state.nodes, nodeId, (data) => {
+          // 追加新结果到 result.data，而不是覆盖
+          const existingData = data.result?.data ?? []
+          const newImageUrl = response.imageUrl
+          const mergedData = newImageUrl
+            ? [...existingData, { url: newImageUrl }]
+            : existingData
+
+          // 更新已完成数量
+          const completedCount = (data.completedCount ?? 0) + 1
+          // 判断是否所有任务都已完成
+          const allCompleted = completedCount >= totalTaskCount
+
           // SUCCESS 状态表示完成
           if (response.status === 'SUCCESS') {
             return {
               ...data,
-              status: GenerationStatus.COMPLETED,
-              progress: 100,
-              task_id: response.id ?? taskId,
+              status: allCompleted ? GenerationStatus.COMPLETED : GenerationStatus.IN_PROGRESS,
+              progress: allCompleted ? 100 : progressValue,
               result: {
                 type: 'image',
-                data: response.imageUrl ? [{ url: response.imageUrl }] : [],
+                data: mergedData,
               },
-              error: undefined,
+              completedCount,
+              error: allCompleted ? undefined : data.error,
             }
           }
 
@@ -368,13 +418,13 @@ const pollMjImageGeneration = async (
           if (response.status === 'FAILURE' || response.status === 'CANCEL') {
             return {
               ...data,
-              status: GenerationStatus.FAILED,
+              status: allCompleted ? GenerationStatus.FAILED : GenerationStatus.IN_PROGRESS,
               progress: progressValue,
-              task_id: response.id ?? taskId,
               error: {
                 code: 'MJ_ERROR',
                 message: response.failReason || response.description || '生成失败，请稍后再试',
               },
+              completedCount,
             }
           }
 
@@ -385,19 +435,23 @@ const pollMjImageGeneration = async (
             ...data,
             status: isQueued ? GenerationStatus.QUEUED : GenerationStatus.IN_PROGRESS,
             progress: progressValue,
-            task_id: response.id ?? taskId,
           }
         }),
       }))
 
       if (response.status === 'SUCCESS' || response.status === 'FAILURE' || response.status === 'CANCEL') {
-        stopImagePollingInternal(nodeId)
+        stopImagePollingInternal(taskId)
+        // 如果所有任务都完成了，清理计数
+        const currentData = getState().nodes.find((n) => n.id === nodeId)?.data as ImageGenerationNode
+        if ((currentData?.completedCount ?? 0) >= totalTaskCount) {
+          pendingTaskCounts.delete(nodeId)
+        }
         return
       }
     }
   } catch (pollError) {
     console.error('Midjourney 图片生成轮询失败:', pollError)
-    stopImagePollingInternal(nodeId)
+    stopImagePollingInternal(taskId)
     setState((state) => ({
       nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
         ...data,
@@ -939,6 +993,12 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     // 先中止旧轮询，避免并发任务冲突
     stopImagePollingInternal(nodeId)
 
+    // 记录待完成的 task 数量（用于多图生成场景）
+    // 每次调用递增，这样最后一个任务完成时可以判断是否全部结束
+    const currentCount = pendingTaskCounts.get(nodeId) ?? 0
+    pendingTaskCounts.set(nodeId, currentCount + 1)
+    const totalTaskCount = currentCount + 1
+
     // 更新节点输入参数与状态
     set((state) => ({
       nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
@@ -980,27 +1040,34 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
         throw new Error('任务 ID 为空')
       }
 
-      // 标记为生成中并记录任务 ID
+      // 标记为生成中
       set((state) => ({
         nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
           ...data,
-          task_id: taskId,
           status: GenerationStatus.IN_PROGRESS,
           progress: 0,
         })),
       }))
 
+      // 为每个 task 创建独立的 controller，以 taskId 为 key 存储
       const controller = new AbortController()
-      imagePollingControllers.set(nodeId, controller)
+      imagePollingControllers.set(taskId, controller)
 
-      // 根据模型类型选择不同的轮询函数
+      // 根据模型类型选择不同的轮询函数，传入 totalTaskCount 用于判断所有任务是否完成
       if (isMidjourney) {
-        pollMjImageGeneration(taskId, nodeId, controller.signal, set, get)
+        pollMjImageGeneration(taskId, nodeId, controller.signal, set, get, totalTaskCount)
       } else {
-        pollImageGeneration(taskId, nodeId, controller.signal, set, get)
+        pollImageGeneration(taskId, nodeId, controller.signal, set, get, totalTaskCount)
       }
     } catch (startError) {
       console.error('创建图片生成任务失败:', startError)
+      // 调用失败时减少待完成数量
+      const remaining = (pendingTaskCounts.get(nodeId) ?? 1) - 1
+      if (remaining <= 0) {
+        pendingTaskCounts.delete(nodeId)
+      } else {
+        pendingTaskCounts.set(nodeId, remaining)
+      }
       set((state) => ({
         nodes: updateImageNodeInList(state.nodes, nodeId, (data) => ({
           ...data,
@@ -1016,10 +1083,15 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   },
 
   /**
-   * 手动停止图片轮询
+   * 手动停止图片轮询（停止该节点下所有任务的轮询）
    */
   stopImagePolling: (nodeId) => {
-    stopImagePollingInternal(nodeId)
+    // 停止所有与该节点相关的 task 轮询
+    imagePollingControllers.forEach((controller, taskId) => {
+      controller.abort()
+      imagePollingControllers.delete(taskId)
+    })
+    pendingTaskCounts.delete(nodeId)
   },
 
   /**

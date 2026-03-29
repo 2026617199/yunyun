@@ -36,9 +36,18 @@ import { IntegratedParamsPanel } from './components/IntegratedParamsPanel'
  * 说明：
  * - 本期所有状态均本地 useState 管理，后续可替换为 store/api。
  */
+
+// 图片生成数量选项
+const IMAGE_COUNT_OPTIONS = [1, 2, 4] as const
+type ImageCount = typeof IMAGE_COUNT_OPTIONS[number]
+
 export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     // 上传中态，避免重复上传触发
     const [isUploading, setIsUploading] = useState(false)
+  // 图片生成数量选择
+  const [imageCount, setImageCount] = useState<ImageCount>(1)
+  // 正在生成的数量（用于显示进度提示）
+  const [generatingCount, setGeneratingCount] = useState(0)
 
     const [mentionQuery, setMentionQuery] = useState('')
     const [commandQuery, setCommandQuery] = useState('')
@@ -477,7 +486,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
 
     const suggestionItems = activeMode === 'mention' ? filteredMentionItems : filteredCommandItems
 
-    // 点击生成：创建任务并启动轮询
+  // 点击生成：根据数量多次调用接口创建任务
     const handleGenerate = async () => {
         const promptText = editor?.getText().trim() ?? ''
         const mergedPrompt = [...parentNoteContents, promptText]
@@ -490,7 +499,8 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             return
         }
 
-        const payload: any = {
+      // 构建请求 payload（注意：n 固定为 1，通过多次调用实现多图生成）
+      const buildPayload = (): any => ({
             model,
             prompt: mergedPrompt,
             size: ratio,
@@ -504,13 +514,35 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             metadata: {
                 resolution,
             },
-        }
+        })
 
-        try {
-            await startImageGeneration(nodeId, payload)
-            success('已开始生成图片')
-        } catch (generationError) {
-            console.error('创建图片生成任务失败:', generationError)
+      // 显示总共需要生成的图片数量
+      setGeneratingCount(imageCount)
+
+      // 记录成功和失败的数量
+      let successCount = 0
+      let failCount = 0
+
+      // 多次调用接口，每次只生成 1 张图片
+      for (let i = 0; i < imageCount; i++) {
+          try {
+              await startImageGeneration(nodeId, buildPayload())
+              successCount++
+            } catch (generationError) {
+          console.error(`第 ${i + 1} 张图片生成任务创建失败:`, generationError)
+          failCount++
+        }
+      }
+
+      // 重置进度显示
+      setGeneratingCount(0)
+
+      // 根据结果显示提示
+      if (failCount === 0) {
+        success(`已开始生成 ${successCount} 张图片`)
+      } else if (successCount > 0) {
+        warning(`已创建 ${successCount} 张图片，${failCount} 张创建失败`)
+      } else {
             error('创建任务失败，请稍后再试')
         }
     }
@@ -646,7 +678,27 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                         </Select>
                     </div>
 
-                    <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              {/* 数量选择按钮 */}
+              <div className="flex items-center gap-1 rounded-lg border border-neutral-700 bg-neutral-900 p-0.5">
+                {IMAGE_COUNT_OPTIONS.map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setImageCount(count)}
+                    disabled={isGenerating}
+                    className={`nodrag nopan nowheel inline-flex h-7 min-w-8 items-center justify-center rounded-md px-1.5 text-xs font-medium transition-colors ${imageCount === count
+                        ? 'bg-blue-600 text-white'
+                        : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
+                      } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={`生成 ${count} 张图片`}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+
+              {/* 生成按钮 */}
                         <Button
                             type="button"
                             variant="blue"
@@ -655,7 +707,9 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                             onClick={handleGenerate}
                             disabled={isUploading}
                         >
-                            生成
+                {isGenerating && generatingCount > 0
+                  ? `生成中 (${generatingCount})`
+                  : `生成 ${imageCount > 1 ? `×${imageCount}` : ''}`}
                         </Button>
                     </div>
                 </div>
