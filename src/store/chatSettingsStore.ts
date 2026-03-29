@@ -23,6 +23,8 @@ type ChatSettingsState = {
   savePathVideo: string
   /** 草稿封面保存路径 */
   savePathDraftCover: string
+  /** 调试工具面板显示开关*/
+  devToolsVisible: boolean
 }
 
 type ChatSettingsActions = {
@@ -35,6 +37,7 @@ type ChatSettingsActions = {
   setSavePathImage: (path: string) => void
   setSavePathVideo: (path: string) => void
   setSavePathDraftCover: (path: string) => void
+  setDevToolsVisible: (visible: boolean) => void
   resetToDefault: () => void
 }
 
@@ -48,6 +51,8 @@ const INITIAL_STATE: ChatSettingsState = {
   savePathImage: '',
   savePathVideo: '',
   savePathDraftCover: '',
+  nodeSearchVisible: false,
+  devToolsVisible: false,
 }
 
 export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActions>()(
@@ -64,6 +69,7 @@ export const useChatSettingsStore = create<ChatSettingsState & ChatSettingsActio
       setSavePathImage: (path) => set({ savePathImage: path }),
       setSavePathVideo: (path) => set({ savePathVideo: path }),
       setSavePathDraftCover: (path) => set({ savePathDraftCover: path }),
+      setDevToolsVisible: (visible) => set({ devToolsVisible: visible }),
       resetToDefault: () => set(INITIAL_STATE),
     }),
     {

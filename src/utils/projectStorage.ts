@@ -13,6 +13,9 @@ export type ProjectMeta = {
     id: string
     name: string
     createdAt: number
+    coverUrl?: string
+    description?: string
+    type: 'video' | 'script'
 }
 
 // 项目列表类型
@@ -32,10 +35,10 @@ export const getProjectList = (): ProjectMeta[] => {
     try {
         const raw = localStorage.getItem(PROJECT_LIST_KEY)
         if (!raw) return []
-        
+
         const data = JSON.parse(raw) as ProjectList
         if (data.version !== STORAGE_VERSION) return []
-        
+
         return data.projects
     } catch {
         return []
@@ -61,7 +64,7 @@ const getNextId = (): number => {
     try {
         const raw = localStorage.getItem(PROJECT_LIST_KEY)
         if (!raw) return 1
-        
+
         const data = JSON.parse(raw) as ProjectList
         return data.nextId || data.projects.length + 1
     } catch {
@@ -72,39 +75,47 @@ const getNextId = (): number => {
 /**
  * 创建新项目
  * @param name 项目名称，可选，默认为 "项目 N"
+ * @param coverUrl 封面图片 URL，可选
+ * @param description 项目描述，可选
  * @returns 新创建的项目元数据
  */
-export const createProject = (name?: string): ProjectMeta => {
+export const createProject = (name?: string, coverUrl?: string, description?: string, type: 'video' | 'script' = 'video'): ProjectMeta => {
     const projects = getProjectList()
     const nextId = getNextId()
-    
+
     const newProject: ProjectMeta = {
         id: String(nextId),
         name: name || `项目 ${nextId}`,
         createdAt: Date.now(),
+        coverUrl,
+        description,
+        type,
     }
-    
+
     // 新项目添加到列表末尾
     projects.push(newProject)
     saveProjectList(projects, nextId + 1)
-    
+
     return newProject
 }
 
 /**
- * 更新项目名称
+ * 更新项目（支持 name / coverUrl / description）
  */
-export const updateProjectName = (id: string, name: string): boolean => {
+export const updateProject = (
+    id: string,
+    updates: any
+): boolean => {
     try {
         const raw = localStorage.getItem(PROJECT_LIST_KEY)
         if (!raw) return false
-        
+
         const data = JSON.parse(raw) as ProjectList
         const index = data.projects.findIndex(p => p.id === id)
-        
+
         if (index === -1) return false
-        
-        data.projects[index].name = name
+
+        Object.assign(data.projects[index], updates)
         localStorage.setItem(PROJECT_LIST_KEY, JSON.stringify(data))
         return true
     } catch {
@@ -119,19 +130,19 @@ export const deleteProject = (id: string): boolean => {
     try {
         const raw = localStorage.getItem(PROJECT_LIST_KEY)
         if (!raw) return false
-        
+
         const data = JSON.parse(raw) as ProjectList
         const index = data.projects.findIndex(p => p.id === id)
-        
+
         if (index === -1) return false
-        
+
         // 删除项目元数据
         data.projects.splice(index, 1)
         localStorage.setItem(PROJECT_LIST_KEY, JSON.stringify(data))
-        
+
         // 删除项目画布数据
         localStorage.removeItem(getCanvasDataKey(id))
-        
+
         return true
     } catch {
         return false

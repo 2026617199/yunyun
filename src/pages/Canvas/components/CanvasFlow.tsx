@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
     ReactFlow,
     Background,
@@ -13,7 +14,7 @@ import {
 
 import { NodeSearch } from '@/components/node-search'
 import type { Node } from '@xyflow/react'
-import { Eye, EyeOff, Upload } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Upload } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
 import { nodeTypes } from '../constants/canvasConfig'
@@ -22,6 +23,7 @@ import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { uploadImage } from '@/api/ai'
 import type { AllNodeType, EdgeType } from '@/types/flow'
+import { Button } from '@/components/ui/button'
 
 type CanvasFlowProps = {
     projectId: string | undefined
@@ -42,6 +44,7 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
     const gridVisible = useChatSettingsStore((state) => state.gridVisible)
     const nodeSearchVisible = useChatSettingsStore((state) => state.nodeSearchVisible)
     const { screenToFlowPosition } = useReactFlow<AllNodeType, EdgeType>()
+  const navigate = useNavigate()
 
     // 当 projectId 变化时切换项目
     useEffect(() => {
@@ -277,6 +280,19 @@ export const CanvasFlow = ({ projectId }: CanvasFlowProps) => {
                         />
                     </div>
                 )}
+
+          {/* 返回按钮 */}
+          <div className="absolute top-4 left-4 z-10">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate('/home')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="size-4" />
+              返回
+            </Button>
+          </div>
             </div>
         </CanvasContextMenu>
     )
