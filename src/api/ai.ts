@@ -1,5 +1,8 @@
-import aiService from '@/utils/aiRequest'
+// import aiService, { zeakaiRequest, getAiToken } from '@/utils/aiRequest'
 import { EventSourceParserStream } from 'eventsource-parser/stream'
+import type { submitMjImagineResponse, fetchMjTaskResponse } from '@/types/MJGeneration'
+import { aiService, zeakaiRequest } from '@/utils/aiRequest'
+import { getAiToken } from '@/utils/utils'
 
 // ===================== 账户余额相关 =====================
 
@@ -54,25 +57,30 @@ export function getVideoTaskStatus(id: string) {
 // 兼容 OpenAI 格式的文字对话接口，支持全部文字模型
 // - stream: false 或不传 → 返回完整响应
 // - stream: true → 返回 async generator，逐块 yield 文本内容
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapis.com'
 
 export async function createChatCompletion(data: any, signal?: AbortSignal) {
   if (data.stream) {
-    const response = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
+    // 构建请求头 - 动态从 localStorage 获取 API 密钥
+    const token = getAiToken()
+    const headers: any = {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+    }
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    // 使用代理路径（开发环境走 Vite 代理，生产环境走 Nginx 代理），exe文件不会存在跨域问题
+    const response = await fetch('/v1/chat/completions', {
       method: 'POST',
       signal,
-      headers: {
-        Accept: 'text/event-stream',
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer sk-8ngj8WD671ZFioHc2qypEJFQwhWeims435RtteF28IPxgHWR'
-      },
+      headers,
       body: JSON.stringify(data),
     })
 
     if (!response.ok) {
       throw new Error(await response.text().catch(() => `请求失败：${response.status}`))
     }
-
 
     const reader = response.body!
       .pipeThrough(new TextDecoderStream())
@@ -119,6 +127,21 @@ export function uploadImage(data: any) {
   })
 }
 
+// ===================== Midjourney 相关 =====================
 
+// 提交 Midjourney imagine 任务
+export function submitMjImagine(data: { prompt: string }) {
+  return zeakaiRequest({
+    url: '/mj/submit/imagine',
+    method: 'post',
+    data
+  })
+}
 
-
+// 获取 Midjourney 任务状态
+export function fetchMjTask(id: string) {
+  return zeakaiRequest({
+    url: `/mj/task/${id}/fetch`,
+    method: 'get'
+  })
+}

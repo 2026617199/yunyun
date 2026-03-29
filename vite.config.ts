@@ -16,5 +16,22 @@ export default defineConfig({
   server: {
     port: 3004,
     host: '0.0.0.0',
+    // 开发环境代理配置（解决跨域问题）
+    proxy: {
+      // AI 服务代理
+      '/v1': {
+        target: 'https://toapis.com',
+        changeOrigin: true,
+        // 超时设置（用于长时间运行的请求）
+        timeout: 300000,
+      },
+      // ZeakAI 服务代理
+      '/mj': {
+        target: 'https://zeakai-api.api4midjourney.com',
+        changeOrigin: true,
+        // 超时设置
+        timeout: 300000,
+      },
+    },
   },
 })

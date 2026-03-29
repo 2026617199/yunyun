@@ -7,32 +7,32 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with production environment
 RUN npm run build
 
 # Production stage
-FROM node:24-alpine AS production
+FROM nginx:stable-alpine AS production
 
-WORKDIR /app
-
-# Install serve for static file serving
-RUN npm install -g serve
+# Remove default nginx website
+RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built artifacts from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose port
 EXPOSE 3004
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3004 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3004/health || exit 1
 
-# Start the server
-CMD ["serve", "-s", "dist", "-l", "3004"]
+# Start nginx (using daemon off to keep container running)
+CMD ["nginx", "-g", "daemon off;"]

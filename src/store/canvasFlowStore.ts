@@ -9,7 +9,7 @@ import {
 import { create } from 'zustand'
 
 import { createImageGeneration, createVideoGeneration, getImageTaskStatus, getVideoTaskStatus } from '@/api/ai'
-import { submitMjImagine, fetchMjTask } from '@/api/zeakai'
+import { submitMjImagine, fetchMjTask } from '@/api/ai'
 import { useChatSettingsStore } from '@/store/chatSettingsStore'
 import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-presets'
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
@@ -510,7 +510,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     if (currentProjectId === projectId && get().hydrated) {
       return
     }
-    
+
     // 停止所有轮询
     imagePollingControllers.forEach((_, nodeId) => {
       stopImagePollingInternal(nodeId)
@@ -518,7 +518,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     videoPollingControllers.forEach((_, nodeId) => {
       stopVideoPollingInternal(nodeId)
     })
-    
+
     // 加载新项目数据
     const storageKey = getCanvasDataKey(projectId)
     try {
@@ -570,7 +570,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   saveGraph: () => {
     const state = get()
     if (!state.projectId) return
-    
+
     const data: CanvasPersistedState = {
       version: CANVAS_STORAGE_VERSION,
       savedAt: Date.now(),
@@ -587,7 +587,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
    */
   hydrateGraph: (projectId: string) => {
     if (get().hydrated) return
-    
+
     get().switchProject(projectId)
   },
 
@@ -597,7 +597,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
   resetToSavedGraph: () => {
     const state = get()
     if (!state.projectId) return
-    
+
     try {
       const storageKey = getCanvasDataKey(state.projectId)
       const raw = localStorage.getItem(storageKey)
@@ -633,7 +633,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
     videoPollingControllers.forEach((_, nodeId) => {
       stopVideoPollingInternal(nodeId)
     })
-    
+
     set({
       nodes: [],
       edges: [],
@@ -963,12 +963,12 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
       if (isMidjourney) {
         // Midjourney 模型使用 zeakai API
         const response = await submitMjImagine({ prompt: payload.prompt })
-        
+
         // code === 1 表示提交成功
         if (response.code !== 1) {
           throw new Error(response.description || 'Midjourney 任务提交失败')
         }
-        
+
         taskId = response.result
       } else {
         // 其他模型使用原有 API
@@ -992,7 +992,7 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
 
       const controller = new AbortController()
       imagePollingControllers.set(nodeId, controller)
-      
+
       // 根据模型类型选择不同的轮询函数
       if (isMidjourney) {
         pollMjImageGeneration(taskId, nodeId, controller.signal, set, get)

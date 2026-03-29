@@ -1,30 +1,95 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import axios, { AxiosRequestConfig, AxiosInstance } from 'axios'
 
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://toapisrrrrrrrr.com'
+// 从 utils 导入 API 密钥管理函数
+import { getAiToken, getZeakaiToken } from './utils'
 
-const aiService = axios.create({
-  baseURL: AI_BASE_URL,
-  headers: {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer sk-8ngj8WD671ZFioHc2qypEJFQwhWeims435RtteF28IPxgHWR',
+// ===================== 服务基础配置 =====================
+
+// 全局请求超时时间（单位：毫秒）
+const REQUEST_TIMEOUT = 300000
+
+// 通用请求头配置
+const DEFAULT_HEADERS = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+}
+
+// 服务配置类型
+type ServiceConfig = {
+  baseURL: string
+  getToken: () => string
+}
+
+// 服务配置映射
+const SERVICE_CONFIGS: Record<string, ServiceConfig> = {
+  ai: {
+    baseURL: '/', // 开发环境 /v1 会代理到 https://toapis.com
+    getToken: getAiToken,
   },
-  timeout: 300000,
-})
-
-// 响应拦截器
-aiService.interceptors.response.use(
-  (response) => {
-    // 没有多余data
-    return response.data
+  zeakai: {
+    baseURL: '/', // 开发环境 /mj 会代理到 https://zeakai-api.api4midjourney.com
+    getToken: getZeakaiToken,
   },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+}
 
+// ===================== 工厂函数：创建服务实例 =====================
+
+/**
+ * 创建 axios 服务实例
+ * @param serviceName 服务名称
+ * @param config 服务配置
+ */
+const createService = (serviceName: string, config: ServiceConfig): AxiosInstance => {
+  const service = axios.create({
+    baseURL: config.baseURL,
+    headers: { ...DEFAULT_HEADERS },
+    timeout: REQUEST_TIMEOUT,
+  })
+
+  // 请求拦截器 - 动态设置 Authorization
+  service.interceptors.request.use(
+    (reqConfig) => {
+      const token = config.getToken()
+      if (token) {
+        reqConfig.headers.Authorization = `Bearer ${token}`
+      }
+      return reqConfig
+    },
+    (error) => Promise.reject(error)
+  )
+
+  // 响应拦截器 - 直接返回 response.data
+  service.interceptors.response.use(
+    (response) => response.data,
+    (error) => Promise.reject(error)
+  )
+
+  return service
+}
+
+// ===================== 创建服务实例 =====================
+
+const aiService = createService('ai', SERVICE_CONFIGS.ai)
+const zeakaiService = createService('zeakai', SERVICE_CONFIGS.zeakai)
+
+// ===================== 请求方法封装 =====================
+
+/**
+ * AI 服务请求方法
+ */
 const aiRequest = async <T = any>(config: AxiosRequestConfig): Promise<T> => {
   return await aiService.request(config)
 }
 
+/**
+ * ZeakAI 服务请求方法
+ */
+const zeakaiRequest = async <T = any>(config: AxiosRequestConfig): Promise<T> => {
+  return await zeakaiService.request(config)
+}
+
+// ===================== 导出 =====================
+
+export { aiService, zeakaiService }
 export default aiRequest
+export { zeakaiRequest }

@@ -1,4 +1,4 @@
-import { IconBolt, IconDownload, IconRestore, IconUpload, IconX } from '@tabler/icons-react'
+import { IconBolt, IconDownload, IconEye, IconEyeOff, IconKey, IconRestore, IconUpload, IconX } from '@tabler/icons-react'
 import { useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch'
 import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import useMessage from '@/hooks/useMessage'
 import { cn } from '@/utils/utils'
+import { getAiToken, setAiToken, getZeakaiToken, setZeakaiToken } from '@/utils/utils'
+import { Input } from '@/components/ui/input'
 
 type SettingsModalProps = {
     open: boolean
@@ -22,6 +24,7 @@ const settingSections = [
     { id: 'general', label: '通用设置' },
     { id: 'canvas', label: '画布设置' },
     { id: 'interaction', label: '节点交互' },
+  { id: 'apikey', label: 'API 密钥' },
     { id: 'ai', label: 'AI 助手' },
     { id: 'collab', label: '协作通知' },
     { id: 'data', label: '数据与版本' },
@@ -151,22 +154,33 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                     <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr]">
                         <aside className="border-r border-slate-200 bg-slate-50/80 p-3">
                             <div className="space-y-1">
-                                {settingSections.map((section) => (
-                                    <button
-                                        key={section.id}
-                                        type="button"
-                                        className={cn(
-                                            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                                            activeSection === section.id
-                                                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
-                                                : 'text-slate-600 hover:bg-white hover:text-slate-900',
-                                        )}
-                                        onClick={() => setActiveSection(section.id)}
-                                    >
-                                        <IconBolt size={14} />
-                                        <span>{section.label}</span>
-                                    </button>
-                                ))}
+                    {settingSections.map((section) => {
+                      // 根据不同分类使用不同的图标
+                      const getIcon = () => {
+                        if (section.id === 'apikey') return <IconKey size={14} />
+                        if (section.id === 'data') return <IconDownload size={14} />
+                        if (section.id === 'shortcuts') return <IconKey size={14} />
+                        if (section.id === 'about') return <IconBolt size={14} />
+                        return <IconBolt size={14} />
+                      }
+
+                      return (
+                        <button
+                          key={section.id}
+                          type="button"
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                            activeSection === section.id
+                              ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
+                              : 'text-slate-600 hover:bg-white hover:text-slate-900',
+                          )}
+                          onClick={() => setActiveSection(section.id)}
+                        >
+                          {getIcon()}
+                          <span>{section.label}</span>
+                        </button>
+                      )
+                    })}
                             </div>
                         </aside>
 
@@ -247,6 +261,11 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                                     </>
                                 )}
 
+                    {/* API 密钥设置 */}
+                    {activeSection === 'apikey' && (
+                      <ApiKeySection />
+                    )}
+
                                 {/* 数据与版本 - 导入导出 */}
                                 {activeSection === 'data' && (
                                     <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -318,8 +337,150 @@ export const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                     <Button size="sm" onClick={() => setImportConfirmOpen(false)}>取消</Button>
                     <Button size="sm" variant="blue" onClick={handleConfirmImport}>确认导入</Button>
                 </DialogFooter>
-            </DialogContent>
+          </DialogContent>
         </Dialog>
         </>
     )
+}
+
+// ===================== API 密钥输入区域组件 =====================
+
+function ApiKeySection() {
+  // 状态管理
+  const [aiToken, setAiTokenState] = useState('')
+  const [zeakaiToken, setZeakaiTokenState] = useState('')
+  const [showAiToken, setShowAiToken] = useState(false)
+  const [showZeakaiToken, setShowZeakaiToken] = useState(false)
+  const { success, error } = useMessage()
+
+  // 初始化时从 localStorage 读取
+  useMemo(() => {
+    setAiTokenState(getAiToken())
+    setZeakaiTokenState(getZeakaiToken())
+  }, [])
+
+  // 保存 AI 密钥
+  const handleSaveAiToken = () => {
+    if (!aiToken.trim()) {
+      error('请输入 AI 服务密钥')
+      return
+    }
+    setAiToken(aiToken.trim())
+    success('AI 服务密钥已保存')
+  }
+
+  // 保存 ZeakAI 密钥
+  const handleSaveZeakaiToken = () => {
+    if (!zeakaiToken.trim()) {
+      error('请输入 ZeakAI 服务密钥')
+      return
+    }
+    setZeakaiToken(zeakaiToken.trim())
+    success('ZeakAI 服务密钥已保存')
+  }
+
+  // 清空密钥
+  const handleClearAiToken = () => {
+    setAiToken('')
+    localStorage.removeItem('yunyun_ai_token')
+    success('AI 服务密钥已清空')
+  }
+
+  const handleClearZeakaiToken = () => {
+    setZeakaiToken('')
+    localStorage.removeItem('yunyun_zeakai_token')
+    success('ZeakAI 服务密钥已清空')
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* AI 服务密钥 */}
+      <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="mb-3">
+          <div className="text-sm font-medium text-slate-800">AI 服务密钥</div>
+          <div className="text-xs text-slate-500 mt-0.5">用于文字对话、图片生成、视频生成等 API 调用</div>
+        </div>
+        <div className="space-y-2">
+          <div className="relative">
+            <Input
+              type={showAiToken ? 'text' : 'password'}
+              placeholder="请输入 AI 服务密钥 (sk-...)"
+              value={aiToken}
+              onChange={(e) => setAiTokenState(e.target.value)}
+              className="h-9 pr-10 border-slate-200 text-sm"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => setShowAiToken(!showAiToken)}
+            >
+              {showAiToken ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="blue" onClick={handleSaveAiToken}>
+              保存
+            </Button>
+            <Button size="sm" variant="blue" onClick={handleClearAiToken}>
+              清空
+            </Button>
+            {getAiToken() && (
+              <span className="flex items-center text-xs text-green-600">
+                ● 已配置
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ZeakAI 服务密钥 (Midjourney) */}
+      <section className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="mb-3">
+          <div className="text-sm font-medium text-slate-800">ZeakAI 服务密钥</div>
+          <div className="text-xs text-slate-500 mt-0.5">用于 Midjourney 图片生成 API 调用</div>
+        </div>
+        <div className="space-y-2">
+          <div className="relative">
+            <Input
+              type={showZeakaiToken ? 'text' : 'password'}
+              placeholder="请输入 ZeakAI 服务密钥"
+              value={zeakaiToken}
+              onChange={(e) => setZeakaiTokenState(e.target.value)}
+              className="h-9 pr-10 border-slate-200 text-sm"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => setShowZeakaiToken(!showZeakaiToken)}
+            >
+              {showZeakaiToken ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="blue" onClick={handleSaveZeakaiToken}>
+              保存
+            </Button>
+            <Button size="sm" variant="blue" onClick={handleClearZeakaiToken}>
+              清空
+            </Button>
+            {getZeakaiToken() && (
+              <span className="flex items-center text-xs text-green-600">
+                ● 已配置
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 说明 */}
+      <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+        <div className="text-xs text-amber-800">
+          <div className="font-medium mb-1">💡 提示</div>
+          <div>• 密钥存储在浏览器本地，不会发送到服务器</div>
+          <div>• 清除浏览器缓存会导致密钥丢失，请妥善保管</div>
+          <div>• 生产环境建议通过 Nginx 配置环境变量添加密钥</div>
+        </div>
+      </div>
+    </div>
+  )
 }
