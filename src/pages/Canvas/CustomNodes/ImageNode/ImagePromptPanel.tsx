@@ -50,9 +50,6 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
   // 正在生成的数量（用于显示进度提示）
   const [generatingCount, setGeneratingCount] = useState(0)
 
-    // Midjourney 高级参数
-  const [mjPValue, setMjPValue] = useState('')
-
     const [mentionQuery, setMentionQuery] = useState('')
     const [commandQuery, setCommandQuery] = useState('')
     const [activeMode, setActiveMode] = useState<'mention' | 'command' | null>(null)
@@ -85,8 +82,15 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
     const model = currentImageData?.model ?? 'doubao-seedream-5-0'
     const aspectRatio = currentImageData?.aspectRatio ?? '1:1'
     const uploadedUrls = currentImageData?.uploadedUrls ?? []
+  const imageUrls = currentImageData?.image_urls ?? []
     const promptDraftHtml = currentImageData?.promptDraftHtml ?? '<p></p>'
     const isMidjourneyModel = model === 'midjourney'
+  const midjourneyAdvanced = currentImageData?.midjourneyAdvanced ?? {
+    referenceUrls: imageUrls,
+    styleUrls: [],
+    iw: 0.5,
+    sw: 100,
+  }
 
     const resetSuggestionState = () => {
         setActiveMode(null)
@@ -516,6 +520,7 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
             promptDraft: editor?.getText() ?? '',
             promptDraftHtml: editor?.getHTML() ?? '<p></p>',
             uploadedUrls,
+        midjourneyAdvanced,
             metadata: {
                 resolution,
             },
@@ -686,8 +691,18 @@ export const ImagePromptPanel = ({ nodeId }: { nodeId: string }) => {
                     {/* Midjourney 高级选项 - 仅在选择 Midjourney 模型时显示 */}
                     {isMidjourneyModel && (
                         <MidjourneyAdvancedPanel
-                pValue={mjPValue}
-                onPValueChange={setMjPValue}
+                referenceImageUrls={referenceImageUrls}
+                value={midjourneyAdvanced}
+                onChange={(next) => {
+                  updateImageNodeData(nodeId, {
+                    midjourneyAdvanced: {
+                      referenceUrls: next.referenceUrls ?? [],
+                      styleUrls: next.styleUrls ?? [],
+                      iw: next.iw ?? 0.5,
+                      sw: next.sw ?? 100,
+                    },
+                  })
+                }}
                         />
                     )}
 

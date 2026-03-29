@@ -39,6 +39,12 @@ export interface ImageGenerationNode {
   style?: string; // 图片风格
   image_urls?: string[]; // 参考图片 URL 列表
   uploadedUrls?: string[]; // 面板上传的参考图 URL 列表
+  midjourneyAdvanced?: {
+    referenceUrls?: string[] // Midjourney 参考图列表（用于拼接前缀 URL）
+    styleUrls?: string[] // Midjourney 风格图列表（用于 --sref）
+    iw?: number // Midjourney 参考图权重（用于 --iw）
+    sw?: number // Midjourney 风格权重（用于 --sw）
+  }
   templateId?: string; // 面板风格模板 ID
   // ---- 输出结果 ----
   result?: {

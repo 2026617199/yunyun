@@ -15,6 +15,7 @@ import { getAgentPresetById, type AgentPresetId } from '@/constants/agent-preset
 import type { AllNodeType, EdgeType, ImageGenerationNode, VideoGenerationNode } from '@/types/flow'
 import { GenerationStatus } from '@/constants/enum'
 import { getCanvasDataKey } from '@/utils/projectStorage'
+import { buildMidjourneyPrompt } from '@/pages/Canvas/CustomNodes/ImageNode/utils/buildMidjourneyPrompt'
 
 // ==================== 持久化配置 ====================
 
@@ -750,6 +751,12 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
           promptDraft: '',
           promptDraftHtml: '<p></p>',
           uploadedUrls: [],
+          midjourneyAdvanced: {
+            referenceUrls: [],
+            styleUrls: [],
+            iw: 0.5,
+            sw: 100,
+          },
           templateId: 'none',
           status: GenerationStatus.COMPLETED,
           progress: 0,
@@ -1021,8 +1028,16 @@ export const useCanvasFlowStore = create<CanvasFlowState>((set, get) => ({
       let taskId: string
 
       if (isMidjourney) {
+        const finalPrompt = buildMidjourneyPrompt({
+          prompt: payload.prompt,
+          referenceUrls: payload?.midjourneyAdvanced?.referenceUrls,
+          styleUrls: payload?.midjourneyAdvanced?.styleUrls,
+          iw: payload?.midjourneyAdvanced?.iw,
+          sw: payload?.midjourneyAdvanced?.sw,
+        })
+
         // Midjourney 模型使用 zeakai API
-        const response = await submitMjImagine({ prompt: payload.prompt })
+        const response = await submitMjImagine({ prompt: finalPrompt })
 
         // code === 1 表示提交成功
         if (response.code !== 1) {
