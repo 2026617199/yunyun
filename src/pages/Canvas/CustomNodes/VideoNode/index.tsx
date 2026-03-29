@@ -3,6 +3,7 @@ import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
 import { useNodeScale } from '@/hooks/useNodeScale'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { VideoNodeType } from '@/types/flow'
 
 import { VideoContent } from './VideoContent'
@@ -25,6 +26,8 @@ export const VideoNode = memo(({
 }: NodeProps<VideoNodeType>) => {
     const isDragging = Boolean(dragging)
     const { zoom } = useNodeScale()
+    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
+    const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
     // 获取选中节点数量，框选多节点时不显示工具栏
     const selectedNodesCount = useStore((state) => state.nodes.filter((n) => n.selected).length)
     const handleVisibilityClass = selected
@@ -61,6 +64,8 @@ export const VideoNode = memo(({
                     <VideoToolbar
                         data={data}
                         selected={selected}
+                        onDuplicate={() => duplicateNode(id)}
+                        onDelete={() => deleteNode(id)}
                     />
                 </div>
             </NodeToolbar>

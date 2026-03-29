@@ -3,6 +3,7 @@ import { memo } from 'react'
 
 import { ButtonHandle } from '@/components/button-handle'
 import { useNodeScale } from '@/hooks/useNodeScale'
+import { useCanvasFlowStore } from '@/store/canvasFlowStore'
 import type { ImageNodeType } from '@/types/flow'
 
 import { ImageContent } from './ImageContent'
@@ -25,6 +26,8 @@ export const ImageNode = memo(({
 }: NodeProps<ImageNodeType>) => {
     const isDragging = Boolean(dragging)
     const { zoom } = useNodeScale()
+    const duplicateNode = useCanvasFlowStore((state) => state.duplicateNode)
+    const deleteNode = useCanvasFlowStore((state) => state.deleteNode)
     // 获取选中节点数量，框选多节点时不显示工具栏
     const selectedNodesCount = useStore((state) => state.nodes.filter((n) => n.selected).length)
     const handleVisibilityClass = selected
@@ -58,7 +61,13 @@ export const ImageNode = memo(({
             {/* 顶部工具栏：随视口缩放同步变化 */}
             <NodeToolbar isVisible={shouldShowToolbar} position={Position.Top} offset={10 * zoom}>
                 <div style={{ transform: `scale(${zoom})`, transformOrigin: 'bottom center' }}>
-                    <ImageToolbar nodeId={id} data={data} selected={selected} />
+                    <ImageToolbar
+                        nodeId={id}
+                        data={data}
+                        selected={selected}
+                        onDuplicate={() => duplicateNode(id)}
+                        onDelete={() => deleteNode(id)}
+                    />
                 </div>
             </NodeToolbar>
 
