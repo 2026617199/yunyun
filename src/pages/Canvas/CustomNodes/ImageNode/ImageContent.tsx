@@ -24,7 +24,7 @@ export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
     // 错误状态
     if (status === GenerationStatus.FAILED) {
         return (
-            <div className="noflow nopan nowheel h-full w-full flex flex-col items-center justify-center p-4 text-center bg-destructive/5">
+          <div className="         h-full w-full flex flex-col items-center justify-center p-4 text-center bg-destructive/5">
                 <div className="text-sm font-medium text-destructive mb-2">生成失败</div>
                 {error?.message && (
                     <div className="text-xs text-muted-foreground mb-3 line-clamp-2">
@@ -47,7 +47,7 @@ export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
     // 加载中状态
     if (status === GenerationStatus.IN_PROGRESS || status === GenerationStatus.QUEUED) {
         return (
-            <div className="noflow nopan nowheel h-full w-full flex flex-col items-center justify-center p-4 bg-muted/20">
+          <div className="         h-full w-full flex flex-col items-center justify-center p-4 bg-muted/20">
                 <div className="w-3/4 h-1 bg-muted rounded-full overflow-hidden mb-3">
                     <div
                         className="h-full bg-primary transition-all duration-300"
@@ -68,7 +68,7 @@ export const ImageContent = ({ data, onRetry }: ImageContentProps) => {
 
     // 空状态
     return (
-        <div className="noflow nopan nowheel h-full w-full flex items-center justify-center p-4 text-center text-muted-foreground text-sm bg-muted/10">
+      <div className="         h-full w-full flex items-center justify-center p-4 text-center text-muted-foreground text-sm bg-muted/10">
             暂无图片
         </div>
     )

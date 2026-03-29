@@ -41,7 +41,7 @@ export const CollapsibleImageGallery = ({ images }: CollapsibleImageGalleryProps
     }
 
     return (
-        <div className="noflow nopan nowheel h-full w-full overflow-hidden rounded-md bg-background p-1">
+        <div className={`nopan h-full w-full overflow-hidden rounded-md bg-background p-1 ${isExpanded && totalCount > 4 ? 'nowheel' : ''}`}>
             <div className="relative h-full w-full overflow-hidden rounded-lg bg-background shadow-sm">
                 {/* 右上角图片数量徽标：用于展开/收起切换 */}
                 <button
