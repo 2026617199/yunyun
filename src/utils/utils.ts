@@ -68,3 +68,38 @@ export async function uploadImageFile(file: File): Promise<string | undefined> {
     return undefined
   }
 }
+
+// ===================== 环境检测与基础URL配置 =====================
+
+/**
+ * 检测是否在 Electron 环境中运行
+ */
+export const isElectron = (): boolean => {
+  // 检测 window.electron（preload 脚本注入）
+  if (typeof window !== 'undefined' && (window as any).electron) {
+    return true
+  }
+  // 检测 user agent
+  if (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('electron')) {
+    return true
+  }
+  return false
+}
+
+/**
+ * 获取基础 URL
+ * - Electron 环境：使用完整的 API 地址
+ * - Web 环境：使用相对路径（由 Vite 代理或 Nginx 代理处理）
+ */
+export const getBaseURL = (apiPath: string): string => {
+  if (isElectron()) {
+    // Electron 环境直接请求 API 服务器
+    const apiServers: Record<string, string> = {
+      ai: 'https://toapis.com',
+      zeakai: 'https://zeakai-api.api4midjourney.com',
+    }
+    return apiServers[apiPath] || '/'
+  }
+  // Web 环境使用相对路径，由代理处理
+  return '/'
+}

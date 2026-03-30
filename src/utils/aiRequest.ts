@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosInstance } from 'axios'
 
-// 从 utils 导入 API 密钥管理函数
-import { getAiToken, getZeakaiToken } from './utils'
+// 从 utils 导入 API 密钥管理函数和环境检测函数
+import { getAiToken, getZeakaiToken, getBaseURL } from './utils'
 
 // ===================== 服务基础配置 =====================
 
@@ -18,39 +18,6 @@ const DEFAULT_HEADERS = {
 type ServiceConfig = {
   baseURL: string
   getToken: () => string
-}
-
-/**
- * 检测是否在 Electron 环境中运行
- */
-const isElectron = (): boolean => {
-  // 检测 window.electron（preload 脚本注入）
-  if (typeof window !== 'undefined' && (window as any).electron) {
-    return true
-  }
-  // 检测 user agent
-  if (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('electron')) {
-    return true
-  }
-  return false
-}
-
-/**
- * 获取基础 URL
- * - Electron 环境：使用完整的 API 地址
- * - Web 环境：使用相对路径（由 Vite 代理或 Nginx 代理处理）
- */
-const getBaseURL = (apiPath: string): string => {
-  if (isElectron()) {
-    // Electron 环境直接请求 API 服务器
-    const apiServers: Record<string, string> = {
-      ai: 'https://toapis.com',
-      zeakai: 'https://zeakai-api.api4midjourney.com',
-    }
-    return apiServers[apiPath] || '/'
-  }
-  // Web 环境使用相对路径，由代理处理
-  return '/'
 }
 
 // 服务配置映射
@@ -125,4 +92,4 @@ const zeakaiRequest = async <T = any>(config: AxiosRequestConfig): Promise<T> =>
 
 export { aiService, zeakaiService }
 export default aiRequest
-export { zeakaiRequest, getBaseURL as getAIBaseURL }
+export { zeakaiRequest }
