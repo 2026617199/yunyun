@@ -1,7 +1,7 @@
 // import aiService, { zeakaiRequest, getAiToken } from '@/utils/aiRequest'
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import type { submitMjImagineResponse, fetchMjTaskResponse } from '@/types/MJGeneration'
-import { aiService, zeakaiRequest } from '@/utils/aiRequest'
+import { aiService, zeakaiRequest, getAIBaseURL } from '@/utils/aiRequest'
 import { getAiToken } from '@/utils/utils'
 
 // ===================== 账户余额相关 =====================
@@ -70,8 +70,11 @@ export async function createChatCompletion(data: any, signal?: AbortSignal) {
       headers.Authorization = `Bearer ${token}`
     }
 
-    // 使用代理路径（开发环境走 Vite 代理，生产环境走 Nginx 代理），exe文件不会存在跨域问题
-    const response = await fetch('/v1/chat/completions', {
+    // 获取基础 URL（Electron 环境使用完整地址，Web 环境使用相对路径）
+    const baseURL = getAIBaseURL('ai')
+    const url = baseURL === '/' ? '/v1/chat/completions' : `${baseURL}/v1/chat/completions`
+
+    const response = await fetch(url, {
       method: 'POST',
       signal,
       headers,

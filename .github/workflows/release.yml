@@ -11,18 +11,7 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            platform: win
-          - os: macos-latest
-            platform: mac
-          - os: ubuntu-latest
-            platform: linux
-
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -38,37 +27,17 @@ jobs:
         run: npm ci
 
       - name: Build Electron app
-        run: npm run build:${{ matrix.platform }}
+        run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts (Windows)
-        if: matrix.platform == 'win'
         uses: actions/upload-artifact@v4
         with:
           name: release-windows
           path: |
             dist/*.exe
             dist/*.msi
-          retention-days: 1
-
-      - name: Upload artifacts (macOS)
-        if: matrix.platform == 'mac'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-macos
-          path: |
-            dist/*.dmg
-            dist/*.pkg
-          retention-days: 1
-
-      - name: Upload artifacts (Linux)
-        if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-linux
-          path: |
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.snap
           retention-days: 1
 
   release:
@@ -86,18 +55,6 @@ jobs:
           name: release-windows
           path: dist
 
-      - name: Download macOS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: release-macos
-          path: dist
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: release-linux
-          path: dist
-
       - name: List artifacts
         run: ls -la dist/
 
@@ -106,10 +63,6 @@ jobs:
         with:
           files: |
             dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.snap
           generate_release_notes: true
           draft: false
           prerelease: false
