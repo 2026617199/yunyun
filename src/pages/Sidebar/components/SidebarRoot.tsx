@@ -1,16 +1,16 @@
 import { cn } from '@/utils/utils'
 import { SidebarProvider } from '../context/sidebarContext'
-import type { SidebarRootProps } from '../types/sidebar.types'
+import { SidebarRootProps } from '@/types/sidebar/sidebar'
 
 // 根容器组件
-export const SidebarRoot = ({ 
-  children, 
+export const SidebarRoot = ({
+  children,
   defaultActiveId,
-  classNames 
+  classNames
 }: SidebarRootProps) => {
   return (
     <SidebarProvider defaultActiveId={defaultActiveId}>
-      <nav 
+      <nav
         className={cn(
           'flex flex-col items-center',
           classNames?.root

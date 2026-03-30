@@ -95,8 +95,8 @@ export const useAgentExecution = (options: {
     try {
       const response = await createChatCompletion(payload)
       // console.log('AI 响应', response)
-    //   const generatedContent = extractAssistantContent(response)
-      const generatedContent = response?.choices?.[0]?.message?.content ||  '生成出现了点问题，未能获取到有效内容，请稍后再试~'
+      // 检查是否是流式响应（AsyncGenerator）或普通响应
+      const generatedContent = (response as any)?.choices?.[0]?.message?.content || '生成出现了点问题，未能获取到有效内容，请稍后再试~'
 
       if (!generatedContent) {
         error('生成失败', '未获取到有效的文本结果')
